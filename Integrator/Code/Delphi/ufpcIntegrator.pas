@@ -23,7 +23,7 @@ unit ufpcIntegrator;
 
 interface
 uses Classes, uIntegrator, uModel, ufpcParser, uCodeProvider,
-  uCodeParser;
+  uCodeParser, uConfig;
 
 type
 
@@ -38,6 +38,7 @@ type
   public
     procedure ImportOneFile(const FileName : string); override;
     class function GetFileExtensions : TStringList; override;
+    class function CaseSensitive : Boolean; override;
   end;
 
 
@@ -51,14 +52,8 @@ var
   GlobalDefines : TStringList;
 begin
     GlobalDefines := TStringList.Create;
-
-    {$ifdef WIN32}   ////FPCTODO sort this properly for fpc
-    GlobalDefines.Add('MSWINDOWS');
-    GlobalDefines.Add('WIN32');
-    {$endif}
-    {$ifdef LINUX}
-    GlobalDefines.Add('LINUX');
-    {$endif}
+    GlobalDefines.Delimiter := ' ';
+    GlobalDefines.DelimitedText := Config.AdditionalDefines;
 
     Parser := TfpcParser.Create;
     try
@@ -81,6 +76,11 @@ begin
   Result.Values['.inc'] := 'include';
   Result.Values['.lpr'] := 'Lazarus project';
 //  Result.Values['.lpk'] := 'Lazarus package';
+end;
+
+class function TfpciImporter.CaseSensitive : Boolean;
+begin
+  Result := false;
 end;
 
 function TfpciImporter.NeedPackageHandler(const AName: string; var AStream: TStream; OnlyLookUp: Boolean = True):String;

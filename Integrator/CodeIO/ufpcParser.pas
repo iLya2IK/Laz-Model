@@ -167,7 +167,6 @@ begin
   FUnit := (FModel as TLogicPackage).AddUnit(M.Name);
   FUnit.Sourcefilename := Filename;
   GetUnits(M.ProgramSection.UsesList);
-
 end;
 
 procedure TfpcParser.ParseUnit(M: TPasModule);
@@ -179,7 +178,6 @@ begin
    intf := M.InterfaceSection;
    GetUnits(intf.UsesList);
    GetClasses(intf.Classes);
-
 end;
 
 procedure TfpcParser.GetUnits(u: TFPList; AVisibility: TVisibility;
@@ -234,27 +232,44 @@ var
   intf: TInterface;
 begin
   If Assigned(c) and (c.Count > 0) then
+  begin
      for i := 0 to c.Count- 1 do
      begin
         cls := TPasClassType(c.Items[i]);
-
         case cls.ObjKind of
           okObject, okClass:
           begin
             ths := FUnit.AddClass(cls.Name);
             ths.SourceY := cls.SourceLinenumber;
-            PopulateClass(ths, cls);
           end;
           okInterface:
           begin
             intf := FUnit.AddInterface(cls.Name);
             intf.SourceY := cls.SourceLinenumber;
+          end;
+//  TODO        okGeneric, okSpecialize,
+//  or NOT      okClassHelper,okRecordHelper,okTypeHelper
+        end;
+     end;
+     for i := 0 to c.Count- 1 do
+     begin
+        cls := TPasClassType(c.Items[i]);
+        case cls.ObjKind of
+          okObject, okClass:
+          begin
+            ths := TClass(FUnit.FindClassifier(cls.Name));
+            PopulateClass(ths, cls);
+          end;
+          okInterface:
+          begin
+            intf := TInterface(FUnit.AddInterface(cls.Name));
             PopulateInterface(intf, cls);
           end;
 //  TODO        okGeneric, okSpecialize,
 //  or NOT      okClassHelper,okRecordHelper,okTypeHelper
         end;
      end;
+  end;
 
 end;
 
@@ -363,17 +378,17 @@ end;
 function TfpcParser.getClassifier(s: String): TClassifier;
 begin
   if s = '' then s := 'Unidentified datatype';
-  Result := FUnit.FindClassifier(s);
+  Result := FUnit.FindClassifier(s, False, TClass);
   if not Assigned(Result) then
-     Result := FUnit.FindClassifier(s, False, TClass);
+     Result := FUnit.FindClassifier(s);
   if not Assigned(Result) then
        Result := FOM.UnknownPackage.FindClassifier(s, False, TClass);
   if not Assigned(Result) then
      Result := FOM.UnknownPackage.FindClassifier(s);
   if not Assigned(Result) then
-  if s[1] ='T' then   // HACK ALERT
+  {if s[1] ='T' then   // HACK ALERT
       Result := FOM.UnknownPackage.AddClass(s)
-  else
+  else}
       Result := FOM.UnknownPackage.AddDatatype(s);
 end;
 
@@ -400,6 +415,10 @@ begin
   if Assigned(cls.AncestorType) then
   begin
     ans := TPasType(cls.AncestorType);
+    if Length(ans.Name) = 0 then //some empty parent name -> TObject
+    begin
+      ans.Name := 'TObject';
+    end;
     ancestor := FUnit.FindClassifier(ans.Name,False,TClass) as TClass;
     if Not Assigned(ancestor) then
     begin
@@ -512,7 +531,9 @@ procedure TfpcParser.ParseFileWithDefines(AModel: TAbstractPackage;
 var
   M: TPasModule;
   E: TPasTreeContainer;
-  s: string;
+  s, platform, cpu: string;
+  params : Array of String;
+  i : integer;
   pp: TPasProgram;
 begin
   FGlobalDefines := GlobalDefines;
@@ -521,21 +542,44 @@ begin
 
   E := TSimpleEngine.Create;
   s:=  ExtractFileExt(fFilename);
-  if ( s = '.lpr') then
-  begin
-     E.InterfaceOnly := false;
-     TSImpleEngine(E).IsProgram := True;
-     pp:= ParseSource(E, self.Filename ,'WINDOWS' ,'i386', True) as TPasProgram;
-     ParseProject (pp);
-     FreeAndNil(E);
-  end
-  else
-  begin
-     M := ParseSource(E, self.Filename ,'WINDOWS' ,'i386', True);
-     ParseUnit(M);
-     FreeAndNil(M);
+  try
+    {$IFDEF WINDOWS}
+    platform := 'WINDOWS';
+    {$ELSE}
+    {$IFDEF LINUX}
+    platform := 'LINUX';
+    {$ENDIF}
+    {$ENDIF}
+    {$IFDEF CPU64}
+    cpu := 'x86_64';
+    {$ELSE}
+    cpu := 'i8086';
+    {$ENDIF}
+    SetLength(params, 1 + GlobalDefines.Count);
+    for i := 0 to GlobalDefines.Count-1 do
+    begin
+      params[i+1] := GlobalDefines[i];
+    end;
+    params[0] := self.Filename;
+
+    if ( s = '.lpr') then
+    begin
+       E.InterfaceOnly := false;
+       TSImpleEngine(E).IsProgram := True;
+
+       pp:= ParseSource(E, params, platform ,cpu, [poUseStreams]) as TPasProgram;
+
+       ParseProject (pp);
+    end
+    else
+    begin
+       M := ParseSource(E, params, platform , cpu, [poUseStreams]);
+       ParseUnit(M);
+       FreeAndNil(M);
+    end;
+  finally
+      E.Free;
   end;
-  E.Free;
 end;
 
 end.

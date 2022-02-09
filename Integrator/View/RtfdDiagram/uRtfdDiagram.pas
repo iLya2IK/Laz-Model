@@ -31,6 +31,9 @@ uses uViewIntegrator, essConnectPanel, uModelEntity, uModel, Controls, uListener
 
 
 type
+
+  { TRtfdDiagram }
+
   TRtfdDiagram = class(TDiagramIntegrator,
       IBeforeObjectModelListener, IAfterObjectModelListener,
       IAfterUnitPackageListener)
@@ -73,6 +76,7 @@ type
     constructor Create(om: TObjectModel; AParent: TWinControl; AFeedback : IEldeanFeedback = nil); override;
     destructor Destroy; override;
     procedure InitFromModel; override;
+    procedure SaveAsDotGraph(const FileName : string); override;
     procedure PaintTo(Canvas: TCanvas; X, Y: integer; SelectedOnly : boolean); override;
     procedure GetDiagramSize(var W,H : integer); override;
     procedure SetPackage(const Value: TAbstractPackage); override;
@@ -91,7 +95,7 @@ type
 implementation
 
 uses uRtfdDiagramFrame, Math, LCLIntf, LCLType, uError, SysUtils,
-  uIterators, IniFiles, Dialogs, EssLayout, uConfig, contnrs, ExtCtrls,
+  uIterators, IniFiles, Dialogs, essLayout, uConfig, contnrs, ExtCtrls,
   uIntegrator;
 
 
@@ -232,6 +236,193 @@ begin
   FHasChanged := False;
 end;
 
+procedure TRtfdDiagram.SaveAsDotGraph(const FileName : string);
+var SL : TStringList;
+    ManagedObjs : TList;
+    Connections : TList;
+    Obj : TRtfdBox;
+    frp, tpo, frn, ton : TComponent;
+    Con : TConnection;
+    i, j : integer;
+    Lab : TRtfdCustomLabel;
+    S : String;
+    vis : TVisibility;
+
+    lstEdgeStyle : TessConnectionStyle;
+    lstEdgeArrow : TessConnectionArrowStyle;
+    edgnum : integer;
+begin
+  SL := TStringList.Create;
+  try
+    SL.Add('digraph g {');
+    SL.Add('graph [');
+    SL.Add('rankdir = "'+Config.DotRankDir+'"');
+    SL.Add('];');
+    SL.Add('node [');
+    SL.Add('fontsize = "'+Inttostr(Config.DotFontSize)+'"');
+    SL.Add('shape = "ellipse"');
+    SL.Add('];');
+
+    ManagedObjs := Panel.GetManagedObjects;
+    Connections := Panel.GetConnections;
+    try
+      for i := 0 to ManagedObjs.Count-1 do
+      begin
+        Obj := TRtfdBox(ManagedObjs[i]);
+        if Obj.Visible then
+        begin
+          if Obj is TRtfdUnitPackage then
+          begin
+            if Config.DotAddUrls then
+            begin
+              SL.Add(Format('"%.8X" [URL="%s";label="%s";shape="tab"];',
+                                  [PtrInt(Obj), Config.DotUrlsPrefix + Obj.Entity.FullURIName, TRtfdUnitPackage(Obj).P.Name]));
+            end else
+            begin
+              SL.Add(Format('"%.8X" [label="%s";shape="tab"];',
+                                  [PtrInt(Obj), TRtfdUnitPackage(Obj).P.Name]));
+            end;
+          end else
+          if Obj is TRtfdClass then
+          begin
+            if Config.DotAddUrls then
+            begin
+              S:= Format('"%.8X" [URL="%s";label=<<table border="1" cellborder="1" cellspacing="0">',
+                                  [PtrInt(Obj), Config.DotUrlsPrefix + Obj.Entity.FullURIName]);
+            end else begin
+              S := Format('"%.8X" [label=<<table border="1" cellborder="1" cellspacing="0">', [PtrInt(Obj)]);
+            end;
+
+            for j := 0 to TRtfdClass(Obj).ComponentCount-1 do
+            begin
+              if TRtfdClass(Obj).Components[j] is TRtfdCustomLabel then
+              begin
+                Lab := TRtfdClass(Obj).Components[j] as TRtfdCustomLabel;
+
+                if (Lab is TRtfdOperation) or
+                   (Lab is TRtfdAttribute) then
+                begin
+                  if Assigned(Lab.ModelEntity) and
+                    (Lab.ModelEntity is TFeature) then
+                  begin
+                    vis := TFeature(Lab.ModelEntity).Visibility;
+                  end else vis := viPublic;
+                end else vis := viPublic;
+
+                if (vis >= VisibilityFilter) then
+                begin
+                  s := s + '<tr>';
+                  if Assigned(Lab.ModelEntity) and
+                    (Lab.ModelEntity is TFeature) then
+                  begin
+                    case vis of
+                      viPrivate:
+                      s := s + '<td border="0">-</td>';
+                      viProtected:
+                      s := s + '<td border="0">#</td>';
+                      viPublic, viPublished:
+                      s := s + '<td border="0">+</td>';
+                    end;
+                  end;
+
+                  s := s + Format('<td port="%.8X" ', [PtrInt(Lab)]);
+                  if Lab is TRtfdSeparator then
+                  begin
+                    s := s + 'colspan="2" sides="T" ';
+                  end else
+                  if Lab is TRtfdClassName then
+                  begin
+                    s := s + 'colspan="2" border="0" bgcolor="#eeeeee" color="black" align="center" ';
+                  end else
+                  begin
+                    s := s + 'border="0" align="left" ';
+                  end;
+                  s := s + '>';
+                  s := s + Lab.Caption;
+                  s := s + '</td></tr>';
+                end;
+              end;
+            end;
+            S := S + '</table>>; shape="plain"];';
+            SL.Add(S);
+          end;
+        end;
+      end;
+      edgnum := 0;
+      lstEdgeArrow := asEmptyOpen;
+      lstEdgeStyle := csNormal;
+      for i := 0 to Connections.Count-1 do
+      begin
+        Con := TConnection(Connections[i]);
+        frn := nil;
+        ton := nil;
+        frp := nil;
+        tpo := nil;
+        if Con.FLabFrom is TRtfdCustomLabel then
+        begin
+          frn := Con.FFrom;
+          frp := Con.FLabFrom;
+        end else
+          frn := Con.FFrom;
+        if Con.FLabTo is TRtfdCustomLabel then
+        begin
+          ton := Con.FTo;
+          tpo := Con.FLabTo;
+        end else
+          ton := Con.FTo;
+        if Assigned(frn) and Assigned(ton) and
+           TRtfdBox(frn).Visible and TRtfdBox(ton).Visible then
+        begin
+          if (lstEdgeStyle <> Con.FConnectStyle) or (edgnum = 0) then
+          begin
+            S := 'edge [style=';
+            case Con.FConnectStyle of
+              csThin : s := s + 'solid';
+              csNormal : s := s + 'bold';
+              csThinDash : s := s + 'dashed';
+            end;
+            s := s + ']';
+            SL.Add(S);
+            lstEdgeStyle := Con.FConnectStyle;
+          end;
+
+          if (lstEdgeArrow <> Con.ArrowStyle) or (edgnum = 0) then
+          begin
+            S := 'edge [';
+            case Con.ArrowStyle of
+              asEmptyOpen : s := s + 'dir=forward arrowhead=vee';
+              asEmptyClosed : s := s + 'dir=forward arrowhead=empty';
+              asDiamond : s := s + 'dir=back arrowtail=odiamond';
+            end;
+            s := s + ']';
+            SL.Add(S);
+            lstEdgeArrow := Con.ArrowStyle;
+          end;
+
+          if Assigned(frp) then
+            S := Format('"%.8X":"%.8X"', [PtrInt(frn), PtrInt(frp)]) else
+            S := Format('"%.8X"', [PtrInt(frn)]);
+          S := S + ' -> ';
+          if Assigned(tpo) then
+            S := S + Format('"%.8X":"%.8X"', [PtrInt(ton), PtrInt(tpo)]) else
+            S := S + Format('"%.8X"', [PtrInt(ton)]);
+          SL.Add(S);
+
+          Inc(edgnum);
+        end;
+      end;
+    finally
+      Connections.Free;
+      ManagedObjs.Free;
+    end;
+
+    SL.Add('}');
+    SL.SaveToFile(FileName);
+  finally
+    SL.Free;
+  end;
+end;
+
 
 
 procedure TRtfdDiagram.ModelBeforeChange(Sender: TModelEntity);
@@ -282,6 +473,7 @@ begin
   BoxNames.Clear;
   FHasHidden := False;
   FHasChanged := False;
+
 end;
 
 
@@ -368,7 +560,7 @@ end;
 //Make arrows between boxes
 procedure TRtfdDiagram.ResolveAssociations;
 var
-  I : integer;
+  I, J : integer;
   CBox: TRtfdClass;
   IBox : TRtfdInterface;
   A : TAttribute;
@@ -376,6 +568,8 @@ var
   UBox : TRtfdUnitPackage;
   U : TUnitPackage;
   Dep : TUnitDependency;
+
+  AtrLab : TRtfdAttribute;
 
   Mi : IModelIterator;
   DestBox: TRtfdBox;
@@ -414,7 +608,23 @@ begin
             DestBox := GetBox( A.TypeClassifier.FullName );
             //Test for same entity, this will filter out TDatatype that can have same name as a class
             if Assigned(DestBox) and (DestBox.Entity=A.TypeClassifier) then
-              Panel.ConnectObjects(CBox,DestBox,csThin,asEmptyOpen);
+            begin
+              AtrLab := nil;
+              for J := 0 to CBox.ComponentCount-1 do
+              begin
+                if CBox.Components[j] is TRtfdAttribute then
+                begin
+                  if TRtfdAttribute(CBox.Components[j]).ModelEntity = A then
+                  begin
+                    AtrLab := TRtfdAttribute(CBox.Components[j]);
+                    Break;
+                  end;
+                end;
+              end;
+              if Assigned(AtrLab) then
+                Panel.ConnectObjectsLables(CBox,DestBox,AtrLab,nil,csThinDash,asDiamond);{ else
+                Panel.ConnectObjects(CBox,DestBox,csThinDash,asDiamond);}
+            end;
           end;
         end;
       end;
@@ -464,7 +674,8 @@ begin
 end;
 
 
-procedure TRtfdDiagram.UnitPackageAfterAddChild(Sender, NewChild: TModelEntity);
+procedure TRtfdDiagram.UnitPackageAfterAddChild(Sender : TModelEntity;
+  NewChild : TModelEntity);
 begin
   ErrorHandler.Trace(Format('%s : %s : %s', ['UnitPackageAfterAddChild', ClassName, Sender.Name]));
   if (NewChild is TClass) or (NewChild is TInterface) then

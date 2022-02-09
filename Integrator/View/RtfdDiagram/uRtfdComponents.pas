@@ -336,52 +336,54 @@ var
   Omi,Ami : IModelIterator;
   WasVisible : boolean;
 begin
-  C := Entity as TClass;
-
   WasVisible := Visible;
   Hide;
   DestroyComponents;
-
-  NeedW := 0;
-  NeedH := (ClassShadowWidth * 2) + 4;
-  Inc(NeedH, TRtfdClassName.Create(Self, Entity, 16).Height);
-
-  //Get names in visibility order
-  if FMinVisibility > Low(TVisibility) then
+  if Entity is TClass then
   begin
-    Omi := TModelIterator.Create(C.GetOperations,TOperation,FMinVisibility,ioVisibility);
-    Ami := TModelIterator.Create(C.GetAttributes,TAttribute,FMinVisibility,ioVisibility);
-  end
-  else
-  begin
-    Omi := TModelIterator.Create(C.GetOperations,ioVisibility);
-    Ami := TModelIterator.Create(C.GetAttributes,ioVisibility);
+    C := Entity as TClass;
+
+    NeedW := 0;
+    NeedH := (ClassShadowWidth * 2) + 4;
+    Inc(NeedH, TRtfdClassName.Create(Self, Entity, 16).Height);
+
+    //Get names in visibility order
+    if FMinVisibility > Low(TVisibility) then
+    begin
+      Omi := TModelIterator.Create(C.GetOperations,TOperation,FMinVisibility,ioVisibility);
+      Ami := TModelIterator.Create(C.GetAttributes,TAttribute,FMinVisibility,ioVisibility);
+    end
+    else
+    begin
+      Omi := TModelIterator.Create(C.GetOperations,ioVisibility);
+      Ami := TModelIterator.Create(C.GetAttributes,ioVisibility);
+    end;
+
+    //Separator
+    if (Ami.Count>0) or (Omi.Count>0) then
+      Inc(NeedH, TRtfdSeparator.Create(Self, NeedH).Height);
+
+    //Attributes
+    while Ami.HasNext do
+      Inc(NeedH, TRtfdAttribute.Create(Self,Ami.Next, NeedH).Height);
+
+    //Separator
+    if (Ami.Count>0) and (Omi.Count>0) then
+      Inc(NeedH, TRtfdSeparator.Create(Self, NeedH).Height);
+
+    //Operations
+    while Omi.HasNext do
+      Inc(NeedH, TRtfdOperation.Create(Self,Omi.Next, NeedH).Height);
+
+    for i:= 0 to ComponentCount - 1 do
+      if (TComponent(Components[I]) is TRtfdODLabel) then
+        NeedW := Max( TRtfdODLabel(Components[I]).WidthNeeded,NeedW);
+
+    Height :=  Max(NeedH,cDefaultHeight) + 10;
+    Width  :=  Max(NeedW,cDefaultWidth);
+
+    Visible := WasVisible;
   end;
-
-  //Separator
-  if (Ami.Count>0) or (Omi.Count>0) then
-    Inc(NeedH, TRtfdSeparator.Create(Self, NeedH).Height);
-
-  //Attributes
-  while Ami.HasNext do
-    Inc(NeedH, TRtfdAttribute.Create(Self,Ami.Next, NeedH).Height);
-
-  //Separator
-  if (Ami.Count>0) and (Omi.Count>0) then
-    Inc(NeedH, TRtfdSeparator.Create(Self, NeedH).Height);
-
-  //Operations
-  while Omi.HasNext do
-    Inc(NeedH, TRtfdOperation.Create(Self,Omi.Next, NeedH).Height);
-
-  for i:= 0 to ComponentCount - 1 do
-    if (TComponent(Components[I]) is TRtfdODLabel) then
-      NeedW := Max( TRtfdODLabel(Components[I]).WidthNeeded,NeedW);
-
-  Height :=  Max(NeedH,cDefaultHeight) + 10;
-  Width  :=  Max(NeedW,cDefaultWidth);
-
-  Visible := WasVisible;
 end;
 
 { TRtfdUnitPackage }

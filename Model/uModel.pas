@@ -44,6 +44,8 @@ type
 
   TOperationType = (otConstructor, otDestructor, otProcedure, otFunction);
 
+  { TObjectModel }
+
   TObjectModel = class
   private
     Listeners: TInterfaceList;
@@ -55,6 +57,7 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure Fire(Method: TListenerMethodType; Info: TModelEntity = nil);
+    procedure CleanUpUnknown(CaseSens : Boolean);
     procedure AddListener(NewListener: IUnknown);
     procedure RemoveListener(Listener: IUnknown);
     procedure Clear;
@@ -348,6 +351,132 @@ begin
         raise Exception.Create(ClassName + ' Eventmethod not recognized.');
       end;
     end;
+end;
+
+procedure TObjectModel.CleanUpUnknown(CaseSens : Boolean);
+
+var
+  olde, newe : TModelEntity;
+  repfound : Boolean;
+
+procedure ReplaceAllEntities(It : TObjectList);
+var E : TModelEntity;
+  i : integer;
+begin
+  if not Assigned(It) then
+    Exit;
+  for i := 0 to It.Count-1 do
+  begin
+    E := TModelEntity(It[i]);
+    if (E <> olde) then
+    begin
+      if E.Owner = olde then E.Owner := newe;
+      if E is TClass then
+      begin
+        if (TClass(E).Ancestor = olde) and (newe is TClass) then
+        begin
+          TClass(E).Ancestor := newe as TClass;
+          repfound := true;
+        end;
+        ReplaceAllEntities(TClass(E).FFeatures);
+      end else
+      if E is TInterface then
+      begin
+        if (TInterface(E).Ancestor = olde) and (newe is TInterface) then
+        begin
+          TInterface(E).Ancestor := newe as TInterface;
+          repfound := true;
+        end;
+        ReplaceAllEntities(TInterface(E).FFeatures);
+      end  else
+      if E is TClassifier then
+      begin
+        ReplaceAllEntities(TClassifier(E).FFeatures);
+      end else
+      if E is TAttribute then
+      begin
+        if Assigned(TAttribute(E).TypeClassifier) then
+        if (TAttribute(E).TypeClassifier = olde) or
+           (SameText(olde.Name, TAttribute(E).TypeClassifier.Name)) then
+        begin
+          TAttribute(E).TypeClassifier := newe as TClassifier;
+          repfound := true;
+        end;
+      end else
+      if E is TOperation then
+      begin
+        if Assigned(TOperation(E).ReturnValue) then
+        if (TOperation(E).ReturnValue = olde) or
+           (SameText(olde.Name, TOperation(E).ReturnValue.Name)) then
+        begin
+          TOperation(E).ReturnValue := newe as TClassifier;
+          repfound := true;
+        end;
+        ReplaceAllEntities(TOperation(E).FParameters);
+      end else
+      if E is TParameter then
+      begin
+        if Assigned(TParameter(E).TypeClassifier) then
+        if (TParameter(E).TypeClassifier = olde) or
+           (SameText(olde.Name, TParameter(E).TypeClassifier.Name)) then
+        begin
+          TParameter(E).TypeClassifier := newe as TClassifier;
+          repfound := true;
+        end;
+      end;
+    end;
+  end;
+end;
+
+var
+  i, j, k : integer;
+  UPI, MI, IUI : IModelIterator;
+
+  ME, CE : TModelEntity;
+  UE : TUnitPackage;
+
+
+  issame  : boolean;
+begin
+  i := 0;
+  MI := UnknownPackage.GetClassifiers;
+
+  while i < MI.Count do
+  begin
+    ME := TModelEntity(MI.List[i]);
+    repfound := false;
+    UPI := ModelRoot.GetAllUnitPackages;
+    for j := 0 to UPI.Count-1 do
+    begin
+      UE := TUnitPackage(UPI.List[j]);
+      if UE <> UnknownPackage then
+      begin
+        IUI := UE.GetClassifiers;
+        for k := 0 to IUI.Count-1 do
+        begin
+          CE := TModelEntity(IUI.List[k]);
+          if CaseSens then
+            issame := SameStr(CE.Name, ME.Name) else
+            issame := SameText(CE.Name, ME.Name);
+          if (CE <> ME) and issame then
+          if (CE is TClassifier) then
+          begin
+            olde := ME;
+            newe := CE;
+            ReplaceAllEntities(ModelRoot.GetAllClassifiers.List);
+            if repfound then
+              Break;
+          end;
+        end;
+      end;
+      if repfound then break;
+    end;
+    if repfound then
+    begin
+      MI.List.Delete(i);
+    end else
+      Inc(i);
+  end;
 end;
 
 

@@ -26,16 +26,29 @@ interface
 
 uses
   LCLIntf, LCLType, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls;
+  StdCtrls, Spin;
 
 
 type
+
+  { TSettingsForm }
+
   TSettingsForm = class(TForm)
+    cbDotSaveWithUrls : TCheckBox;
+    eAdditionalDefines : TEdit;
+    eDotRankDir : TEdit;
+    eDotURLPrefix : TEdit;
+    GroupBox1 : TGroupBox;
+    Label4 : TLabel;
+    Label5 : TLabel;
+    Label6 : TLabel;
+    Label7 : TLabel;
     OkButton: TButton;
     DiSaveCombo: TComboBox;
     Label1: TLabel;
     Button2: TButton;
     ShowAssocCheck: TCheckBox;
+    seDotFontSize : TSpinEdit;
     VisibilityCombo: TComboBox;
     Label2: TLabel;
     Label3: TLabel;
@@ -90,6 +103,12 @@ begin
   ShowAssocCheck.Checked := Config.DiShowAssoc;
   VisibilityCombo.ItemIndex := Config.DiVisibilityFilter;
   eEditorCommandLine.Text := Config.EditorCommandLine;
+  eAdditionalDefines.Text := Config.AdditionalDefines;
+
+  eDotRankDir.Text :=          Config.DotRankDir;
+  seDotFontSize.Value :=       Config.DotFontSize;
+  eDotURLPrefix.Text :=        Config.DotUrlsPrefix;
+  cbDotSaveWithUrls.Checked := Config.DotAddUrls;
 end;
 
 procedure TSettingsForm.SaveSettings;
@@ -98,6 +117,11 @@ begin
   Config.DiShowAssoc := ShowAssocCheck.Checked;
   Config.DiVisibilityFilter := VisibilityCombo.ItemIndex;
   Config.EditorCommandLine :=  eEditorCommandLine.Text;
+  Config.AdditionalDefines := eAdditionalDefines.Text;
+  Config.DotRankDir        := eDotRankDir.Text;
+  Config.DotFontSize       := seDotFontSize.Value;
+  Config.DotUrlsPrefix     := eDotURLPrefix.Text;
+  Config.DotAddUrls        := cbDotSaveWithUrls.Checked;
   Config.StoreSettings;
 end;
 

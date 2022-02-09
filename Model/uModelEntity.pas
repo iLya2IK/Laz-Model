@@ -30,13 +30,15 @@ unit uModelEntity;
 
 interface
 
-uses Classes, uDocumentation;
+uses Classes, Contnrs, uDocumentation;
 
 type
   TListenerMethodType = (mtBeforeChange, mtBeforeAddChild, mtBeforeRemove, mtBeforeEntityChange,
     mtAfterChange, mtAfterAddChild, mtAfterRemove, mtAfterEntityChange);
 
   TVisibility = (viPrivate, viProtected, viPublic, viPublished);
+
+  { TModelEntity }
 
   TModelEntity = class(TInterfacedObject)
   private
@@ -53,6 +55,7 @@ type
     FLocked: boolean;
     procedure SetName(const Value: string); virtual;
     function GetFullName: string;
+    function GetFullURIName : String;
     class function GetBeforeListener: TGUID; virtual;
     class function GetAfterListener: TGUID; virtual;
     procedure SetVisibility(const Value: TVisibility);
@@ -61,9 +64,9 @@ type
     function GetSourcefilename: String; virtual;
     procedure SetSourcefilename(const Value: String); virtual;
     {IUnknown, behövs för att kunna vara lyssnare}
-    function QueryInterface(const IID: TGUID; out Obj): HResult;
-    function _AddRef: Integer;
-    function _Release: Integer;
+    function QueryInterface(constref IID: TGUID; out Obj): HResult; cdecl;
+    function _AddRef: Integer; cdecl;
+    function _Release: Integer;cdecl;
   public
     constructor Create(AOwner: TModelEntity); virtual;
     destructor Destroy; override;
@@ -71,6 +74,7 @@ type
     procedure RemoveListener(Listener: IUnknown);
     property Name: string read FName write SetName;
     property FullName: string read GetFullName;
+    property FullURIName: String read GetFullURIName;
     property Owner: TModelEntity read FOwner write FOwner;
     property Visibility: TVisibility read FVisibility write SetVisibility;
     property Locked: boolean read GetLocked write FLocked;
@@ -93,6 +97,7 @@ type
     function Next : TModelEntity;
     procedure Reset;
     function Count : integer;
+    function List : TObjectList;
   end;
 
   //Basinterface for iteratorfilters
@@ -226,20 +231,33 @@ begin
 end;
 
 
-function TModelEntity.QueryInterface(const IID: TGUID; out Obj): HResult;
+function TModelEntity.QueryInterface(constref IID: TGUID; out Obj): HResult; cdecl;
 begin
   if GetInterface(IID, Obj) then Result := S_OK
   else Result := E_NOINTERFACE
 end;
 
-function TModelEntity._AddRef: Integer;
+function TModelEntity._AddRef: Integer; cdecl;
 begin
   Result := -1; // -1 indicates no reference counting is taking place
 end;
 
-function TModelEntity._Release: Integer;
+function TModelEntity._Release: Integer; cdecl;
 begin
   Result := -1; // -1 indicates no reference counting is taking place
+end;
+
+function TModelEntity.GetFullURIName : String;
+begin
+  if Assigned(FOwner) then
+  begin
+    Result := FOwner.GetFullURIName;
+    if Length(Result) > 0 then
+      Result := FOwner.GetFullURIName + '-' + FName else
+      Result := FName;
+  end
+  else
+    Result := FName;
 end;
 
 function TModelEntity.GetRoot: TModelEntity;

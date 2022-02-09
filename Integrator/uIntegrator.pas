@@ -63,6 +63,9 @@ type
     Baseclass for an integrator where 'something' (probably some sourcecode) is
     used to generate a model.
   }
+
+  { TImportIntegrator }
+
   TImportIntegrator = class(TIntegrator)
   protected
     CodeProvider: TCodeProvider;
@@ -77,6 +80,7 @@ type
     procedure BuildModelFrom(FileName : string; ResetModel : boolean = True; Lock : boolean = True); overload;
     procedure BuildModelFrom(FileNames : TStrings); overload;
     class function GetFileExtensions : TStringList; virtual; abstract;
+    class function CaseSensitive : Boolean; virtual; abstract;
   end;
 
   TIntegratorClass = class of TIntegrator;
@@ -190,6 +194,7 @@ begin
       if P<>nil then
         P.Tick;
     end;
+    Model.CleanUpUnknown(CaseSensitive);
   finally
     Model.UnLock;
   end;

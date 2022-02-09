@@ -31,7 +31,11 @@ uses
   {$IFDEF DRAG_SUPPORT}DropSource, DropTarget, {$ENDIF}Menus, uFeedback, uTreeViewIntegrator,ExtCtrls;
 
 type
+
+  { TMainModule }
+
   TMainModule = class(TDataModule)
+    OpenFilesAction : TAction;
     ActionList: TActionList;
     CopyDiagramClipboardAction: TAction;
     PrintDiagramAction: TAction;
@@ -48,6 +52,8 @@ type
     CloseTimer: TTimer;
     OpenFolderAction: TAction;
     ExportEmxAction: TAction;
+    procedure ExportDOTActionExecute(Sender : TObject);
+    procedure OpenFilesActionExecute(Sender : TObject);
     procedure DataModuleCreate(Sender: TObject);
     procedure DataModuleDestroy(Sender: TObject);
     procedure CopyDiagramClipboardActionExecute(Sender: TObject);
@@ -70,6 +76,7 @@ type
     { Private declarations }
     FModel: TObjectModel;
     FDiagram: TDiagramIntegrator;
+    OpenDlg : TOpenDialog;
     //FBackEnd: TCodeIntegrator;
     RecentFiles : TStringList;
     RecentOpenFolderPath : string;
@@ -126,6 +133,8 @@ begin
   RecentFiles.CommaText := Config.ReadStr('RecentFiles','');
   RefreshRecentFiles;
 
+  OpenDlg := nil;
+
   RecentOpenFolderPath := Config.ReadStr('RecentOpenFolderPath','');
 
   Feedback := TGuiFeedback.Create(MainForm.StatusPanel);
@@ -148,6 +157,64 @@ begin
 
   if ParamCount>0 then
     ProcessCommandLine;
+end;
+
+procedure TMainModule.OpenFilesActionExecute(Sender : TObject);
+var
+  Ints : TClassList;
+  fl, Exts : TStringList;
+  I,J : integer;
+  AnyFilter,
+  Filter : string;
+begin
+  Filter := '';
+  AnyFilter := '';
+  Ints := Integrators.Get(TImportIntegrator);
+  try
+    for I := 0 to Ints.Count - 1 do
+    begin
+      Exts := TImportIntegratorClass(Ints[I]).GetFileExtensions;
+      try
+        for J := 0 to Exts.Count - 1 do
+        begin
+          if Filter<>'' then
+            Filter := Filter + '|';
+          Filter := Filter + Exts.Values[ Exts.Names[J] ] + ' (*' + Exts.Names[J] + ')|*' + Exts.Names[J];
+          if AnyFilter<>'' then
+            AnyFilter := AnyFilter + ';';
+          AnyFilter := AnyFilter + '*' + Exts.Names[J];
+        end;
+      finally
+        Exts.Free;
+      end;
+    end;
+  finally
+    Ints.Free;
+  end;
+
+  Filter := 'All types (' + AnyFilter + ')|' + AnyFilter + '|' + Filter;
+
+  if not Assigned(OpenDlg) then
+  begin
+    OpenDlg := TOpenDialog.Create(MainForm);
+    OpenDlg.Filter := Filter;
+  end;
+  OpenDlg.Options := OpenDlg.Options + [ofAllowMultiSelect];
+  if OpenDlg.Execute then
+  begin
+    fl :=  TStringList.Create;
+    for i := 0 to OpenDlg.Files.Count-1 do
+    begin
+      fl.Add(OpenDlg.Files[i]);
+    end;
+    LoadProject(fl);
+    fl.free;
+  end;
+end;
+
+procedure TMainModule.ExportDOTActionExecute(Sender : TObject);
+begin
+  //
 end;
 
 procedure TMainModule.DataModuleDestroy(Sender: TObject);
@@ -425,9 +492,6 @@ end;
 
 
 procedure TMainModule.FileOpenActionExecute(Sender: TObject);
-const
-  // Keep dialog alive between calls so the searchpath is retained
-  D : TOpenDialog = nil;
 var
   Ints : TClassList;
   fl, Exts : TStringList;
@@ -436,6 +500,7 @@ var
   Filter : string;
 begin
   Filter := '';
+  AnyFilter := '';
   Ints := Integrators.Get(TImportIntegrator);
   try
     for I := 0 to Ints.Count - 1 do
@@ -461,19 +526,20 @@ begin
 
   Filter := 'All types (' + AnyFilter + ')|' + AnyFilter + '|' + Filter;
 
-  if not Assigned(D) then
+  if not Assigned(OpenDlg) then
   begin
-    D := TOpenDialog.Create(MainForm);
-    D.Filter := Filter;
+    OpenDlg := TOpenDialog.Create(MainForm);
+    OpenDlg.Filter := Filter;
   end;
-  if D.Execute then
+  OpenDlg.Options := OpenDlg.Options - [ofAllowMultiSelect];
+  if OpenDlg.Execute then
   begin
     // PLATFORM ISSUE
     // Files stringlist is not populated in QT or Gnome for
     // a single file. LoadProject must be passed a string list,
     // so have to use new stringlist instead of TOpenDialog.Files
     fl :=  TStringList.Create;
-    fl.Add(D.Filename);
+    fl.Add(OpenDlg.Filename);
     LoadProject(fl);
     fl.free;
   end;
@@ -579,15 +645,24 @@ begin
   begin
     D := TSaveDialog.Create(MainForm);
     D.InitialDir := ExtractFilePath( Model.ModelRoot.GetConfigFile );
-    D.Filter := 'PNG files (*.png)|All files (*.*)|*.*';
+    D.Filter := 'PNG files (*.png)|*.png|DOT files (*.dot)|*.dot|All files (*.*)|*.*';
   end;
   if D.Execute then
   begin
     if ExtractFileExt(D.FileName)='' then
     begin
-        D.FileName := ChangeFileExt(D.FileName,'.png')
+      if D.FilterIndex = 1 then
+        D.FileName := ChangeFileExt(D.FileName,'.dot') else
+        D.FileName := ChangeFileExt(D.FileName,'.png');
     end;
-    Diagram.SaveAsPicture( D.FileName );
+    if SameText(ExtractFileExt(D.FileName),'.png') then
+    begin
+      Diagram.SaveAsPicture( D.FileName );
+    end else
+    if SameText(ExtractFileExt(D.FileName),'.dot') then
+    begin
+      Diagram.SaveAsDotGraph( D.FileName );
+    end;
   end;
 end;
 

@@ -27,12 +27,16 @@ interface
 uses uCodeParser, Classes, uModel, uIntegrator, uModelEntity, uCodeProvider;
 
 type
+
+  { TJavaClassImporter }
+
   TJavaClassImporter = class(TImportIntegrator)
   private
     function NeedPackageHandler(const AName: string; var AStream: TStream; OnlyLookUp: Boolean = False):String;
   public
     procedure ImportOneFile(const FileName : string); override;
     class function GetFileExtensions : TStringList; override;
+    class function CaseSensitive : Boolean; override;
   end;
 
 
@@ -94,6 +98,11 @@ class function TJavaClassImporter.GetFileExtensions: TStringList;
 begin
   Result := TStringList.Create;
   Result.Values['.class'] := 'Java Class';
+end;
+
+class function TJavaClassImporter.CaseSensitive : Boolean;
+begin
+  Result := true;
 end;
 
 { TJavaClassParser }

@@ -2,15 +2,15 @@ object MainModule: TMainModule
   OnCreate = DataModuleCreate
   OnDestroy = DataModuleDestroy
   OldCreateOrder = False
-  left = 219
-  top = 203
+  Left = 219
+  Top = 203
   Height = 540
   HorizontalOffset = 225
-  VerticalOffset = 306
+  VerticalOffset = 165
   Width = 783
   object ActionList: TActionList
-    left = 81
-    top = 128
+    Left = 81
+    Top = 128
     object CopyDiagramClipboardAction: TAction
       Caption = 'Copy diagram to clipboard'
       Enabled = False
@@ -77,6 +77,11 @@ object MainModule: TMainModule
       Caption = 'Export model to EMX-file'
       Enabled = False
       OnExecute = ExportEmxActionExecute
+    end
+    object OpenFilesAction: TAction
+      Caption = 'Open files...'
+      Hint = 'Open files...'
+      OnExecute = OpenFilesActionExecute
     end
   end
 end

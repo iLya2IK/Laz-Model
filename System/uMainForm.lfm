@@ -1,10 +1,10 @@
 object MainForm: TMainForm
   Left = 84
   Height = 526
-  Top = 339
+  Top = 179
   Width = 648
   Caption = 'x'
-  ClientHeight = 507
+  ClientHeight = 499
   ClientWidth = 648
   Color = clBtnFace
   Font.Color = clWindowText
@@ -16,20 +16,20 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   Position = poScreenCenter
   ShowHint = True
-  LCLVersion = '1.6.0.4'
+  LCLVersion = '2.0.12.0'
   object Panel1: TPanel
     Left = 0
-    Height = 479
+    Height = 471
     Top = 28
     Width = 648
     Align = alClient
     Caption = 'Panel1'
-    ClientHeight = 479
+    ClientHeight = 471
     ClientWidth = 648
     TabOrder = 0
     object Splitter1: TSplitter
       Left = 201
-      Height = 457
+      Height = 449
       Top = 1
       Width = 8
       Beveled = True
@@ -37,7 +37,7 @@ object MainForm: TMainForm
     object StatusPanel: TPanel
       Left = 1
       Height = 20
-      Top = 458
+      Top = 450
       Width = 646
       Align = alBottom
       Alignment = taLeftJustify
@@ -50,7 +50,7 @@ object MainForm: TMainForm
     end
     object DiagramPanel: TPanel
       Left = 209
-      Height = 457
+      Height = 449
       Top = 1
       Width = 438
       Align = alClient
@@ -59,12 +59,12 @@ object MainForm: TMainForm
     end
     object LeftPanel: TPanel
       Left = 1
-      Height = 457
+      Height = 449
       Top = 1
       Width = 200
       Align = alLeft
       BevelOuter = bvNone
-      ClientHeight = 457
+      ClientHeight = 449
       ClientWidth = 200
       TabOrder = 2
       object Splitter2: TSplitter
@@ -88,7 +88,7 @@ object MainForm: TMainForm
       end
       object TreePanel: TPanel
         Left = 0
-        Height = 328
+        Height = 320
         Top = 129
         Width = 200
         Align = alClient
@@ -147,12 +147,12 @@ object MainForm: TMainForm
     end
   end
   object MainMenu1: TMainMenu
-    left = 46
-    top = 55
+    Left = 56
+    Top = 64
     object File1: TMenuItem
       Caption = 'File'
       object Open1: TMenuItem
-        Action = MainModule.FileOpenAction
+        Action = MainModule.OpenFilesAction
       end
       object OpenFolderAction1: TMenuItem
         Action = MainModule.OpenFolderAction

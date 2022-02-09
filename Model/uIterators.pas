@@ -34,6 +34,9 @@ uses Contnrs, uModelEntity;
 type
 
   //Baseclass for iterators
+
+  { TModelIterator }
+
   TModelIterator = class(TInterfacedObject, IModelIterator)
   private
     FItems : TObjectList;
@@ -60,6 +63,7 @@ type
     function Next : TModelEntity;
     procedure Reset;
     function Count : integer;
+    function List : TObjectList;
   end;
 
   //Baseclass for filter used in iterators
@@ -254,6 +258,11 @@ end;
 function TModelIterator.Count: integer;
 begin
   Result := FItems.Count;
+end;
+
+function TModelIterator.List : TObjectList;
+begin
+  Result := FItems;
 end;
 
 

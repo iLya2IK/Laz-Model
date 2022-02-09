@@ -34,7 +34,7 @@ type
   // Available linestyles
   TessConnectionStyle = (csThin, csNormal, csThinDash);
   //Different kinds of arrowheads
-  TessConnectionArrowStyle = (asEmptyOpen,asEmptyClosed);
+  TessConnectionArrowStyle = (asEmptyOpen,asEmptyClosed,asDiamond);
 
   {
     Specifies a connection between two managed objects.
@@ -42,6 +42,7 @@ type
   TConnection = class
   public
     FFrom, FTo: TControl;
+    FLabFrom, FLabTo : TComponent;
     FConnectStyle: TessConnectionStyle;
     ArrowStyle : TessConnectionArrowStyle;
   end;
@@ -140,6 +141,10 @@ type
 
     // Add a connection from Src to Dst with the supplied style
     function ConnectObjects(Src, Dst: TControl;
+      AStyle:TessConnectionStyle = csNormal;
+      Arrow : TessConnectionArrowStyle = asEmptyClosed): Boolean;
+    function ConnectObjectsLables(Src, Dst: TControl;
+      SrcLab, DstLab : TComponent;
       AStyle:TessConnectionStyle = csNormal;
       Arrow : TessConnectionArrowStyle = asEmptyClosed): Boolean;
 
@@ -429,15 +434,24 @@ end;
 
 function TessConnectPanel.ConnectObjects(Src, Dst: TControl;
   AStyle: TessConnectionStyle; Arrow : TessConnectionArrowStyle): Boolean;
+begin
+  ConnectObjectsLables(Src, Dst, nil, nil, AStyle, Arrow);
+end;
+
+function TessConnectPanel.ConnectObjectsLables(Src, Dst : TControl; SrcLab,
+  DstLab : TComponent; AStyle : TessConnectionStyle;
+  Arrow : TessConnectionArrowStyle) : Boolean;
 var
   conn: TConnection;
 begin
   if (FindManagedControl(Src) <> nil) and (FindManagedControl(Dst) <> nil) and
-    (Src<>Dst) then
+    (Src<>Dst)  then
   begin
     conn := TConnection.Create;
     conn.FFrom := Src;
     conn.FTo := Dst;
+    conn.FLabFrom := SrcLab;
+    conn.FLabTo := DstLab;
     conn.FConnectStyle := AStyle;
     conn.ArrowStyle := Arrow;
     FConnections.Add(conn);

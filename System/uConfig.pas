@@ -40,6 +40,11 @@ type
     FDiShowAssoc: boolean;
     FDiVisibilityFilter: integer;
     FEditorCommandLine: String;
+    FAdditionalDefines : String;
+    FDotRankDir : String;
+    FDotFontSize : Integer;
+    FDotAddUrls : Boolean;
+    FDotUrlsPrefix : String;
   public
     constructor Create;
     destructor Destroy; override;
@@ -49,6 +54,11 @@ type
     IsTerminating : boolean;
 
     property EditorCommandLine: String read FEditorCommandLine write FEditorCommandLine;
+    property AdditionalDefines: String read FAdditionalDefines write FAdditionalDefines;
+    property DotRankDir: String read FDotRankDir write FDotRankDir;
+    property DotFontSize : Integer read FDotFontSize write FDotFontSize;
+    property DotAddUrls : Boolean read FDotAddUrls write FDotAddUrls;
+    property DotUrlsPrefix: String read FDotUrlsPrefix write FDotUrlsPrefix;
 
     procedure WriteStr(const Key : string; const Value : string);
     function ReadStr(const Key : string; const Default : string) : string;
@@ -93,6 +103,11 @@ begin
   FDiShowAssoc := ReadInt('DiShowAssoc',0)<>0;
   FDiVisibilityFilter := ReadInt('DiVisibilityFilter',0);
   FEditorCommandLine := ReadStr('EditorCommandLine','');
+  FAdditionalDefines := ReadStr('AdditionalDefines','');
+  FDotAddUrls := ReadBool('DotAddUrls',false);
+  FDotFontSize := ReadInt('DotFontSize',12);
+  FDotUrlsPrefix := ReadStr('DotUrlsPrefix','');
+  FDotRankDir := ReadStr('DotRankDir','');
 end;
 
 destructor TConfig.Destroy;
@@ -151,6 +166,11 @@ begin
   WriteBool('DiShowAssoc',FDiShowAssoc);
   WriteInt('DiVisibilityFilter',FDiVisibilityFilter);
   WriteStr('EditorCommandLine',FEditorCommandLine);
+  WriteStr('AdditionalDefines',FAdditionalDefines);
+  WriteBool('DotAddUrls',FDotAddUrls);
+  WriteInt('DotFontSize',FDotFontSize);
+  WriteStr('DotUrlsPrefix',FDotUrlsPrefix);
+  WriteStr('DotRankDir',FDotRankDir);
 end;
 
 initialization
