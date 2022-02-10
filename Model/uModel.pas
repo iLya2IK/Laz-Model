@@ -357,7 +357,32 @@ procedure TObjectModel.CleanUpUnknown(CaseSens : Boolean);
 
 var
   olde, newe : TModelEntity;
+  UNE : TUnitPackage;
   repfound : Boolean;
+
+procedure SetDependence(E : TModelEntity);
+var DI : IModelIterator;
+  found : boolean;
+begin
+  if (not Assigned(E)) or (E = UNE) then Exit;
+
+  if E is TUnitPackage then
+  begin
+    DI := TUnitPackage(E).GetUnitDependencies;
+    found := false;
+    while DI.HasNext do
+    begin
+      if (DI.Next as TUnitDependency).Package = UNE then
+      begin
+        found := true;
+        break;
+      end;
+    end;
+    if not found then
+      TUnitPackage(E).AddUnitDependency(UNE, viPublic);
+  end else
+    SetDependence(E.Owner);
+end;
 
 procedure ReplaceAllEntities(It : TObjectList);
 var E : TModelEntity;
@@ -376,6 +401,7 @@ begin
         if (TClass(E).Ancestor = olde) and (newe is TClass) then
         begin
           TClass(E).Ancestor := newe as TClass;
+          SetDependence(E);
           repfound := true;
         end;
         ReplaceAllEntities(TClass(E).FFeatures);
@@ -385,6 +411,7 @@ begin
         if (TInterface(E).Ancestor = olde) and (newe is TInterface) then
         begin
           TInterface(E).Ancestor := newe as TInterface;
+          SetDependence(E);
           repfound := true;
         end;
         ReplaceAllEntities(TInterface(E).FFeatures);
@@ -400,6 +427,7 @@ begin
            (SameText(olde.Name, TAttribute(E).TypeClassifier.Name)) then
         begin
           TAttribute(E).TypeClassifier := newe as TClassifier;
+          SetDependence(E);
           repfound := true;
         end;
       end else
@@ -410,6 +438,7 @@ begin
            (SameText(olde.Name, TOperation(E).ReturnValue.Name)) then
         begin
           TOperation(E).ReturnValue := newe as TClassifier;
+          SetDependence(E);
           repfound := true;
         end;
         ReplaceAllEntities(TOperation(E).FParameters);
@@ -421,6 +450,7 @@ begin
            (SameText(olde.Name, TParameter(E).TypeClassifier.Name)) then
         begin
           TParameter(E).TypeClassifier := newe as TClassifier;
+          SetDependence(E);
           repfound := true;
         end;
       end;
@@ -433,7 +463,6 @@ var
   UPI, MI, IUI : IModelIterator;
 
   ME, CE : TModelEntity;
-  UE : TUnitPackage;
 
 
   issame  : boolean;
@@ -448,10 +477,10 @@ begin
     UPI := ModelRoot.GetAllUnitPackages;
     for j := 0 to UPI.Count-1 do
     begin
-      UE := TUnitPackage(UPI.List[j]);
-      if UE <> UnknownPackage then
+      UNE := TUnitPackage(UPI.List[j]);
+      if UNE <> UnknownPackage then
       begin
-        IUI := UE.GetClassifiers;
+        IUI := UNE.GetClassifiers;
         for k := 0 to IUI.Count-1 do
         begin
           CE := TModelEntity(IUI.List[k]);
@@ -469,7 +498,9 @@ begin
           end;
         end;
       end;
-      if repfound then break;
+      if repfound then begin
+        break;
+      end;
     end;
     if repfound then
     begin
