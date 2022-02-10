@@ -35,6 +35,8 @@ type
 
   TSettingsForm = class(TForm)
     cbDotSaveWithUrls : TCheckBox;
+    cbxDotSplineStyle : TComboBox;
+    cbxDotPortSide : TComboBox;
     eAdditionalDefines : TEdit;
     eDotRankDir : TEdit;
     eDotURLPrefix : TEdit;
@@ -43,6 +45,8 @@ type
     Label5 : TLabel;
     Label6 : TLabel;
     Label7 : TLabel;
+    Label8 : TLabel;
+    Label9 : TLabel;
     OkButton: TButton;
     DiSaveCombo: TComboBox;
     Label1: TLabel;
@@ -55,6 +59,7 @@ type
     eEditorCommandLine: TEdit;
     procedure FormCreate(Sender: TObject);
     procedure DelphiIDECheckClick(Sender: TObject);
+    procedure Label8Click(Sender : TObject);
     procedure ShellCheckClick(Sender: TObject);
     procedure OkButtonClick(Sender: TObject);
   private
@@ -85,6 +90,11 @@ begin
   IDEChanged := True;
 end;
 
+procedure TSettingsForm.Label8Click(Sender : TObject);
+begin
+
+end;
+
 
 procedure TSettingsForm.ShellCheckClick(Sender: TObject);
 begin
@@ -109,6 +119,8 @@ begin
   seDotFontSize.Value :=       Config.DotFontSize;
   eDotURLPrefix.Text :=        Config.DotUrlsPrefix;
   cbDotSaveWithUrls.Checked := Config.DotAddUrls;
+  cbxDotPortSide.Text :=       Config.DotPrefferedLabelConnector;
+  cbxDotSplineStyle.Text :=    Config.DotSplines;
 end;
 
 procedure TSettingsForm.SaveSettings;
@@ -122,6 +134,8 @@ begin
   Config.DotFontSize       := seDotFontSize.Value;
   Config.DotUrlsPrefix     := eDotURLPrefix.Text;
   Config.DotAddUrls        := cbDotSaveWithUrls.Checked;
+  Config.DotSplines        := cbxDotSplineStyle.Text;
+  Config.DotPrefferedLabelConnector := cbxDotPortSide.Text;
   Config.StoreSettings;
 end;
 

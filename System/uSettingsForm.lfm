@@ -1,12 +1,12 @@
 object SettingsForm: TSettingsForm
   Left = 366
-  Height = 320
+  Height = 388
   Top = 185
   Width = 542
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Settings'
-  ClientHeight = 320
+  ClientHeight = 388
   ClientWidth = 542
   Color = clBtnFace
   Font.Color = clWindowText
@@ -42,7 +42,7 @@ object SettingsForm: TSettingsForm
   object OkButton: TButton
     Left = 379
     Height = 25
-    Top = 288
+    Top = 356
     Width = 75
     Anchors = [akRight, akBottom]
     Caption = 'OK'
@@ -67,7 +67,7 @@ object SettingsForm: TSettingsForm
   object Button2: TButton
     Left = 461
     Height = 25
-    Top = 288
+    Top = 356
     Width = 75
     Anchors = [akRight, akBottom]
     Caption = 'Cancel'
@@ -124,11 +124,11 @@ object SettingsForm: TSettingsForm
   end
   object GroupBox1: TGroupBox
     Left = 336
-    Height = 272
+    Height = 336
     Top = 8
     Width = 201
     Caption = 'Dot export'
-    ClientHeight = 257
+    ClientHeight = 321
     ClientWidth = 199
     TabOrder = 7
     object cbDotSaveWithUrls: TCheckBox
@@ -140,7 +140,7 @@ object SettingsForm: TSettingsForm
       TabOrder = 0
     end
     object Label5: TLabel
-      Left = 10
+      Left = 8
       Height = 14
       Top = 32
       Width = 57
@@ -163,7 +163,7 @@ object SettingsForm: TSettingsForm
       ParentColor = False
     end
     object seDotFontSize: TSpinEdit
-      Left = 10
+      Left = 8
       Height = 31
       Top = 104
       Width = 81
@@ -172,7 +172,7 @@ object SettingsForm: TSettingsForm
       Value = 12
     end
     object Label7: TLabel
-      Left = 10
+      Left = 8
       Height = 14
       Top = 147
       Width = 78
@@ -180,12 +180,63 @@ object SettingsForm: TSettingsForm
       ParentColor = False
     end
     object eDotRankDir: TEdit
-      Left = 10
+      Left = 8
       Height = 31
       Top = 168
       Width = 80
       TabOrder = 3
       Text = 'BT'
+    end
+    object cbxDotSplineStyle: TComboBox
+      Left = 8
+      Height = 31
+      Top = 223
+      Width = 100
+      ItemHeight = 0
+      ItemIndex = 0
+      Items.Strings = (
+        'spline'
+        'line'
+        'polyline'
+        'curved'
+        'ortho'
+      )
+      Style = csDropDownList
+      TabOrder = 4
+      Text = 'spline'
+    end
+    object Label8: TLabel
+      Left = 8
+      Height = 14
+      Top = 204
+      Width = 99
+      Caption = 'Connections style'
+      ParentColor = False
+      OnClick = Label8Click
+    end
+    object Label9: TLabel
+      Left = 8
+      Height = 14
+      Top = 262
+      Width = 180
+      Caption = 'Preffered port side connection pt'
+      ParentColor = False
+    end
+    object cbxDotPortSide: TComboBox
+      Left = 8
+      Height = 31
+      Top = 283
+      Width = 100
+      ItemHeight = 0
+      ItemIndex = 0
+      Items.Strings = (
+        '_'
+        'w'
+        'e'
+      )
+      Style = csDropDownList
+      TabOrder = 5
+      Text = '_'
     end
   end
 end

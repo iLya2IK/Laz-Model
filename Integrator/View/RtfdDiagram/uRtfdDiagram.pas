@@ -245,7 +245,8 @@ var SL : TStringList;
     Con : TConnection;
     i, j : integer;
     Lab : TRtfdCustomLabel;
-    S : String;
+    S, side, opside : String;
+    useside : Boolean;
     vis : TVisibility;
 
     lstEdgeStyle : TessConnectionStyle;
@@ -257,11 +258,30 @@ begin
     SL.Add('digraph g {');
     SL.Add('graph [');
     SL.Add('rankdir = "'+Config.DotRankDir+'"');
+    SL.Add('splines = "'+Config.DotSplines+'"');
     SL.Add('];');
     SL.Add('node [');
     SL.Add('fontsize = "'+Inttostr(Config.DotFontSize)+'"');
     SL.Add('shape = "ellipse"');
     SL.Add('];');
+
+    if Config.DotPrefferedLabelConnector = 'w' then
+    begin
+      side := 'w';
+      opside := 'e';
+      useside := true;
+    end else
+    if Config.DotPrefferedLabelConnector = 'e' then
+    begin
+      side := 'e';
+      opside := 'w';
+      useside := true;
+    end else
+    begin
+      side := '';
+      opside := '';
+      useside := false;
+    end;
 
     ManagedObjs := Panel.GetManagedObjects;
     Connections := Panel.GetConnections;
@@ -285,13 +305,7 @@ begin
           end else
           if Obj is TRtfdClass then
           begin
-            if Config.DotAddUrls then
-            begin
-              S:= Format('"%.8X" [URL="%s";label=<<table border="1" cellborder="1" cellspacing="0">',
-                                  [PtrInt(Obj), Config.DotUrlsPrefix + Obj.Entity.FullURIName]);
-            end else begin
-              S := Format('"%.8X" [label=<<table border="1" cellborder="1" cellspacing="0">', [PtrInt(Obj)]);
-            end;
+            S := Format('"%.8X" [label=<<table border="1" cellborder="1" cellspacing="0">', [PtrInt(Obj)]);
 
             for j := 0 to TRtfdClass(Obj).ComponentCount-1 do
             begin
@@ -325,7 +339,11 @@ begin
                     end;
                   end;
 
-                  s := s + Format('<td port="%.8X" ', [PtrInt(Lab)]);
+                  if Config.DotAddUrls and Assigned(Lab.ModelEntity) then
+                    S := s + Format('<td port="%.8X" href="%s" title="%s" ',
+                                        [PtrInt(Lab), Config.DotUrlsPrefix + Lab.ModelEntity.FullURIName, Lab.ModelEntity.FullName])
+                  else
+                    s := s + Format('<td port="%.8X" ', [PtrInt(Lab)]);
                   if Lab is TRtfdSeparator then
                   begin
                     s := s + 'colspan="2" sides="T" ';
@@ -400,12 +418,21 @@ begin
           end;
 
           if Assigned(frp) then
-            S := Format('"%.8X":"%.8X"', [PtrInt(frn), PtrInt(frp)]) else
+          begin
+            S := Format('"%.8X":"%.8X"', [PtrInt(frn), PtrInt(frp)]);
+            if useside then
+              S := S + ':' + side;
+          end else
             S := Format('"%.8X"', [PtrInt(frn)]);
           S := S + ' -> ';
           if Assigned(tpo) then
-            S := S + Format('"%.8X":"%.8X"', [PtrInt(ton), PtrInt(tpo)]) else
+          begin
+            S := S + Format('"%.8X":"%.8X"', [PtrInt(ton), PtrInt(tpo)]);
+            if useside then
+              S := S + ':' + opside;
+          end else
             S := S + Format('"%.8X"', [PtrInt(ton)]);
+
           SL.Add(S);
 
           Inc(edgnum);

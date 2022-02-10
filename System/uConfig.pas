@@ -45,6 +45,8 @@ type
     FDotFontSize : Integer;
     FDotAddUrls : Boolean;
     FDotUrlsPrefix : String;
+    FDotSplines    : String;
+    FDotPrefLabCon : String;
   public
     constructor Create;
     destructor Destroy; override;
@@ -59,6 +61,8 @@ type
     property DotFontSize : Integer read FDotFontSize write FDotFontSize;
     property DotAddUrls : Boolean read FDotAddUrls write FDotAddUrls;
     property DotUrlsPrefix: String read FDotUrlsPrefix write FDotUrlsPrefix;
+    property DotSplines: String read FDotSplines write FDotSplines;
+    property DotPrefferedLabelConnector: String read FDotPrefLabCon write FDotPrefLabCon;
 
     procedure WriteStr(const Key : string; const Value : string);
     function ReadStr(const Key : string; const Default : string) : string;
@@ -103,11 +107,13 @@ begin
   FDiShowAssoc := ReadInt('DiShowAssoc',0)<>0;
   FDiVisibilityFilter := ReadInt('DiVisibilityFilter',0);
   FEditorCommandLine := ReadStr('EditorCommandLine','');
-  FAdditionalDefines := ReadStr('AdditionalDefines','');
+  FAdditionalDefines := ReadStr('AdditionalDefines','-Mobjfpc');
   FDotAddUrls := ReadBool('DotAddUrls',false);
   FDotFontSize := ReadInt('DotFontSize',12);
-  FDotUrlsPrefix := ReadStr('DotUrlsPrefix','');
-  FDotRankDir := ReadStr('DotRankDir','');
+  FDotUrlsPrefix := ReadStr('DotUrlsPrefix','https://yoururl.here/');
+  FDotRankDir := ReadStr('DotRankDir','LR');
+  FDotSplines := ReadStr('DotSplines', 'spline');
+  FDotPrefLabCon := ReadStr('DotPrefLabCon', '_');
 end;
 
 destructor TConfig.Destroy;
@@ -171,6 +177,8 @@ begin
   WriteInt('DotFontSize',FDotFontSize);
   WriteStr('DotUrlsPrefix',FDotUrlsPrefix);
   WriteStr('DotRankDir',FDotRankDir);
+  WriteStr('DotSplines', FDotSplines);
+  WriteStr('DotPrefLabCon', FDotPrefLabCon);
 end;
 
 initialization
