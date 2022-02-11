@@ -47,6 +47,7 @@ type
     FDotUrlsPrefix : String;
     FDotSplines    : String;
     FDotPrefLabCon : String;
+    FMDGenIgnoreEntites : String;
   public
     constructor Create;
     destructor Destroy; override;
@@ -63,6 +64,7 @@ type
     property DotUrlsPrefix: String read FDotUrlsPrefix write FDotUrlsPrefix;
     property DotSplines: String read FDotSplines write FDotSplines;
     property DotPrefferedLabelConnector: String read FDotPrefLabCon write FDotPrefLabCon;
+    property MDGenIgnoreEntites : String read FMDGenIgnoreEntites write FMDGenIgnoreEntites;
 
     procedure WriteStr(const Key : string; const Value : string);
     function ReadStr(const Key : string; const Default : string) : string;
@@ -114,6 +116,7 @@ begin
   FDotRankDir := ReadStr('DotRankDir','LR');
   FDotSplines := ReadStr('DotSplines', 'spline');
   FDotPrefLabCon := ReadStr('DotPrefLabCon', '_');
+  FMDGenIgnoreEntites := ReadStr('MDGenIgnoreEntites', '');
 end;
 
 destructor TConfig.Destroy;
@@ -179,6 +182,7 @@ begin
   WriteStr('DotRankDir',FDotRankDir);
   WriteStr('DotSplines', FDotSplines);
   WriteStr('DotPrefLabCon', FDotPrefLabCon);
+  WriteStr('MDGenIgnoreEntites', FMDGenIgnoreEntites);
 end;
 
 initialization

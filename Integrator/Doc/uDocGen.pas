@@ -24,11 +24,16 @@ unit uDocGen;
 
 interface
 
-uses uIntegrator, uModel, uModelEntity;
+uses Classes, uIntegrator, uModel, uModelEntity;
 
 type
   //Baseclass for documenation generators.
+
+  { TDocGen }
+
   TDocGen = class(TExportIntegrator)
+  private
+    FIgnores : TStringList;
   protected
     Packages : IModelIterator;
     procedure TraverseModel; virtual;
@@ -39,10 +44,13 @@ type
     procedure DocStart; virtual; abstract;
     procedure DocFinished; virtual; abstract;
     procedure SelectDestPath;
+    function CheckIsIgnored(E: TModelEntity) : Boolean;
   public
     DestPath : string;     //Let user select path in dialog if not set
     IsPreview : boolean;   //If true generate doc in tempdir
     procedure InitFromModel; override;
+    constructor Create(om: TObjectModel); reintroduce;
+    destructor Destroy; override;
   end;
 
   //Factory function, create instance of tdocgen
@@ -53,10 +61,12 @@ implementation
 
 uses uIterators,
   uHtmlDocGen,
+  uMDocGen,
   uUseful,
   SysUtils,
   Forms,
-  uConst;
+  uConst,
+  uConfig;
 
 
 { TDocGen }
@@ -79,6 +89,20 @@ begin
   DocFinished;
 end;
 
+constructor TDocGen.Create(om : TObjectModel);
+begin
+  inherited Create(om);
+  FIgnores := TStringList.Create;
+  FIgnores.Sorted := true;
+  FIgnores.Duplicates := dupIgnore;
+end;
+
+destructor TDocGen.Destroy;
+begin
+  FIgnores.Free;
+  inherited Destroy;
+end;
+
 procedure TDocGen.SelectDestPath;
 var
   Di : TBrowseForFolderDialog;
@@ -92,6 +116,31 @@ begin
   finally
     Di.Free;
   end;
+end;
+
+function TDocGen.CheckIsIgnored(E : TModelEntity) : Boolean;
+var i : integer;
+begin
+  if FIgnores.Find(E.FullName, {%H-}i) then
+  begin
+    Exit(true);
+  end;
+  if FIgnores.Find(E.Name, {%H-}i) then
+  begin
+    Exit(true);
+  end;
+  if Assigned(E.Owner) then
+  begin
+    if FIgnores.Find(E.Owner.FullName, {%H-}i) then
+    begin
+      Exit(true);
+    end;
+    if FIgnores.Find(E.Owner.Name, {%H-}i) then
+    begin
+      Exit(true);
+    end;
+  end;
+  Result := false;
 end;
 
 procedure TDocGen.TraverseModel;
@@ -137,7 +186,11 @@ end;
 function CreateDocGen(Om : TObjectModel) : TDocGen;
 begin
   //Use html
-  Result := THtmlDocGen.Create(Om);
+  //Result := THtmlDocGen.Create(Om);
+  //Use markdown
+  Result := TMDocGen.Create(Om);
+  Result.FIgnores.Delimiter := ';';
+  Result.FIgnores.DelimitedText := Config.MDGenIgnoreEntites;
 end;
 
 procedure TDocGen.WriteClassDetail(C: TClass);

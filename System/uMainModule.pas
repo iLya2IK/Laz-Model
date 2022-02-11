@@ -52,6 +52,7 @@ type
     CloseTimer: TTimer;
     OpenFolderAction: TAction;
     ExportEmxAction: TAction;
+    procedure Action1Execute(Sender : TObject);
     procedure ExportDOTActionExecute(Sender : TObject);
     procedure OpenFilesActionExecute(Sender : TObject);
     procedure DataModuleCreate(Sender: TObject);
@@ -215,6 +216,11 @@ end;
 procedure TMainModule.ExportDOTActionExecute(Sender : TObject);
 begin
   //
+end;
+
+procedure TMainModule.Action1Execute(Sender : TObject);
+begin
+
 end;
 
 procedure TMainModule.DataModuleDestroy(Sender: TObject);

@@ -52,7 +52,7 @@ type
     procedure AddChild(Sender: TModelEntity; NewChild: TModelEntity); virtual;
     procedure Remove(Sender: TModelEntity); virtual;
     procedure EntityChange(Sender: TModelEntity); virtual;
-    property MinVisibility : TVisibility write SetMinVisibility;
+    property MinVisibility : TVisibility read FMinVisibility write SetMinVisibility;
   end;
 
   TRtfdClass = class(TRtfdBox, IAfterClassListener)

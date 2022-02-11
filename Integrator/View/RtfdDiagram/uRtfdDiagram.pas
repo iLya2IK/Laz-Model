@@ -237,6 +237,15 @@ begin
 end;
 
 procedure TRtfdDiagram.SaveAsDotGraph(const FileName : string);
+
+function CheckVis(E : TModelEntity) : Boolean;
+begin
+  if not assigned(E) then Exit(true);
+  if assigned(OnCheckIgnored) then
+    Result := not OnCheckIgnored(E) else
+    Result := true;
+end;
+
 var SL : TStringList;
     ManagedObjs : TList;
     Connections : TList;
@@ -289,7 +298,7 @@ begin
       for i := 0 to ManagedObjs.Count-1 do
       begin
         Obj := TRtfdBox(ManagedObjs[i]);
-        if Obj.Visible then
+        if Obj.Visible and CheckVis(Obj.Entity) then
         begin
           if Obj is TRtfdUnitPackage then
           begin
@@ -309,21 +318,19 @@ begin
 
             for j := 0 to TRtfdClass(Obj).ComponentCount-1 do
             begin
-              if TRtfdClass(Obj).Components[j] is TRtfdCustomLabel then
+              if (TRtfdClass(Obj).Components[j] is TRtfdCustomLabel) then
               begin
                 Lab := TRtfdClass(Obj).Components[j] as TRtfdCustomLabel;
 
                 if (Lab is TRtfdOperation) or
                    (Lab is TRtfdAttribute) then
                 begin
-                  if Assigned(Lab.ModelEntity) and
-                    (Lab.ModelEntity is TFeature) then
-                  begin
-                    vis := TFeature(Lab.ModelEntity).Visibility;
-                  end else vis := viPublic;
+                  if Assigned(Lab.ModelEntity) then
+                    vis := Lab.ModelEntity.Visibility else
+                    vis := viPublic;
                 end else vis := viPublic;
 
-                if (vis >= VisibilityFilter) then
+                if (vis >= VisibilityFilter) and CheckVis(Lab.ModelEntity) then
                 begin
                   s := s + '<tr>';
                   if Assigned(Lab.ModelEntity) and
@@ -389,7 +396,9 @@ begin
         end else
           ton := Con.FTo;
         if Assigned(frn) and Assigned(ton) and
-           TRtfdBox(frn).Visible and TRtfdBox(ton).Visible then
+           TRtfdBox(frn).Visible and TRtfdBox(ton).Visible and
+           CheckVis(TRtfdBox(frn).Entity) and
+           CheckVis(TRtfdBox(ton).Entity) then
         begin
           if (lstEdgeStyle <> Con.FConnectStyle) or (edgnum = 0) then
           begin
@@ -553,6 +562,7 @@ begin
         while Mi.HasNext do
         begin
           A := TAttribute(Mi.Next);
+          if A.Visibility >= VisibilityFilter then
           if Assigned(A.TypeClassifier) and (GetBox(A.TypeClassifier.FullName)=nil) and
             (A.TypeClassifier<>C) and (A.TypeClassifier<>C.Ancestor) and
             (A.TypeClassifier.Owner<>Model.UnknownPackage) then //Avoid getting temp-types from unknown (java 'int' for example)
@@ -605,52 +615,55 @@ begin
     if (BoxNames.Objects[I] is TRtfdClass) then
     begin //Class
       CBox := (BoxNames.Objects[I] as TRtfdClass);
-      //Ancestor
-      if Assigned((CBox.Entity as TClass).Ancestor) then
+      if (CBox.Entity is TClass) then
       begin
-        DestBox := GetBox( (CBox.Entity as TClass).Ancestor.FullName );
-        if Assigned(DestBox) then
-          Panel.ConnectObjects(CBox,DestBox);
-      end;
-      //Implements
-      Mi := (CBox.Entity as TClass).GetImplements;
-      while Mi.HasNext do
-      begin
-        DestBox := GetBox( Mi.Next.FullName );
-        if Assigned(DestBox) then
-          Panel.ConnectObjects(CBox,DestBox,csThinDash);
-      end;
-      //Attributes associations
-      if ShowAssoc then
-      begin
-        Mi := (CBox.Entity as TClass).GetAttributes;
+        //Ancestor
+        if Assigned((CBox.Entity as TClass).Ancestor) then
+        begin
+          DestBox := GetBox( (CBox.Entity as TClass).Ancestor.FullName );
+          if Assigned(DestBox) then
+            Panel.ConnectObjects(CBox,DestBox);
+        end;
+        //Implements
+        Mi := (CBox.Entity as TClass).GetImplements;
         while Mi.HasNext do
         begin
-          A := TAttribute(Mi.Next);
-          //Avoid arrows that points to themselves, also associations to ancestor (double arrows)
-          if Assigned(A.TypeClassifier) and
-            (A.TypeClassifier<>CBox.Entity) and
-            (A.TypeClassifier<>(CBox.Entity as TClass).Ancestor) then
+          DestBox := GetBox( Mi.Next.FullName );
+          if Assigned(DestBox) then
+            Panel.ConnectObjects(CBox,DestBox,csThinDash);
+        end;
+        //Attributes associations
+        if ShowAssoc then
+        begin
+          Mi := (CBox.Entity as TClass).GetAttributes;
+          while Mi.HasNext do
           begin
-            DestBox := GetBox( A.TypeClassifier.FullName );
-            //Test for same entity, this will filter out TDatatype that can have same name as a class
-            if Assigned(DestBox) and (DestBox.Entity=A.TypeClassifier) then
+            A := TAttribute(Mi.Next);
+            //Avoid arrows that points to themselves, also associations to ancestor (double arrows)
+            if Assigned(A.TypeClassifier) and
+              (A.TypeClassifier<>CBox.Entity) and
+              (A.TypeClassifier<>(CBox.Entity as TClass).Ancestor) then
             begin
-              AtrLab := nil;
-              for J := 0 to CBox.ComponentCount-1 do
+              DestBox := GetBox( A.TypeClassifier.FullName );
+              //Test for same entity, this will filter out TDatatype that can have same name as a class
+              if Assigned(DestBox) and (DestBox.Entity=A.TypeClassifier) then
               begin
-                if CBox.Components[j] is TRtfdAttribute then
+                AtrLab := nil;
+                for J := 0 to CBox.ComponentCount-1 do
                 begin
-                  if TRtfdAttribute(CBox.Components[j]).ModelEntity = A then
+                  if CBox.Components[j] is TRtfdAttribute then
                   begin
-                    AtrLab := TRtfdAttribute(CBox.Components[j]);
-                    Break;
+                    if TRtfdAttribute(CBox.Components[j]).ModelEntity = A then
+                    begin
+                      AtrLab := TRtfdAttribute(CBox.Components[j]);
+                      Break;
+                    end;
                   end;
                 end;
+                if Assigned(AtrLab) then
+                  Panel.ConnectObjectsLables(CBox,DestBox,AtrLab,nil,csThinDash,asDiamond);{ else
+                  Panel.ConnectObjects(CBox,DestBox,csThinDash,asDiamond);}
               end;
-              if Assigned(AtrLab) then
-                Panel.ConnectObjectsLables(CBox,DestBox,AtrLab,nil,csThinDash,asDiamond);{ else
-                Panel.ConnectObjects(CBox,DestBox,csThinDash,asDiamond);}
             end;
           end;
         end;
@@ -658,26 +671,32 @@ begin
     end else if (BoxNames.Objects[I] is TRtfdInterface) then
     begin //Interface
       IBox := (BoxNames.Objects[I] as TRtfdInterface);
-      //Ancestor
-      if Assigned((IBox.Entity as TInterface).Ancestor) then
+      if (IBox.Entity is TInterface) then
       begin
-        DestBox := GetBox( (IBox.Entity as TInterface).Ancestor.FullName );
-        if Assigned(DestBox) then
-          Panel.ConnectObjects(IBox,DestBox);
+        //Ancestor
+        if Assigned((IBox.Entity as TInterface).Ancestor) then
+        begin
+          DestBox := GetBox( (IBox.Entity as TInterface).Ancestor.FullName );
+          if Assigned(DestBox) then
+            Panel.ConnectObjects(IBox,DestBox);
+        end;
       end;
     end else if (BoxNames.Objects[I] is TRtfdUnitPackage) then
     begin //Unit
       UBox := (BoxNames.Objects[I] as TRtfdUnitPackage);
-      U := UBox.Entity as TUnitPackage;
-      Mi := U.GetUnitDependencies;
-      while Mi.HasNext do
+      if (UBox.Entity is TUnitPackage) then
       begin
-        Dep := Mi.Next as TUnitDependency;
-        if Dep.Visibility=viPublic then
+        U := UBox.Entity as TUnitPackage;
+        Mi := U.GetUnitDependencies;
+        while Mi.HasNext do
         begin
-          DestBox := GetBox( Dep.Package.FullName );
-          if Assigned(DestBox) then
-            Panel.ConnectObjects(UBox,DestBox,csThinDash,asEmptyOpen);
+          Dep := Mi.Next as TUnitDependency;
+          if Dep.Visibility=viPublic then
+          begin
+            DestBox := GetBox( Dep.Package.FullName );
+            if Assigned(DestBox) then
+              Panel.ConnectObjects(UBox,DestBox,csThinDash,asEmptyOpen);
+          end;
         end;
       end;
     end;

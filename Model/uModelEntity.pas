@@ -137,7 +137,11 @@ end;
 function TModelEntity.GetFullName: string;
 begin
   if Assigned(FOwner) then
-    Result := FOwner.FullName + '::' + FName
+  begin
+    if Length(FOwner.Name) > 0 then
+      Result := FOwner.FullName + '::' + FName else
+      Result := FName;
+  end
   else
     Result := FName;
 end;

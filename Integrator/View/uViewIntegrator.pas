@@ -45,6 +45,8 @@ type
     property CurrentEntity : TModelEntity read GetCurrentEntity write SetCurrentEntity;
   end;
 
+  TCheckIgnored = function (E : TModelEntity) : Boolean of object;
+
   //Class to show/edit a model in a powerpointy view
 
   { TDiagramIntegrator }
@@ -53,6 +55,7 @@ type
   private
     FOnUpdateToolbar: TNotifyEvent;
     FOnUpdateZoom: TNotifyEvent;
+    FOnCheckIgnored : TCheckIgnored;
     FShowAssoc: boolean;
   protected
     FVisibilityFilter: TVisibility;
@@ -89,6 +92,7 @@ type
     property VisibilityFilter : TVisibility read FVisibilityFilter write SetVisibilityFilter;
     property OnUpdateToolbar : TNotifyEvent read FOnUpdateToolbar write FOnUpdateToolbar;
     property OnUpdateZoom : TNotifyEvent read FOnUpdateZoom write FOnUpdateZoom;
+    property OnCheckIgnored : TCheckIgnored read FOnCheckIgnored write FOnCheckIgnored;
     //True if associations are to be shown
     property ShowAssoc : boolean read FShowAssoc write SetShowAssoc;
   end;
@@ -263,6 +267,7 @@ begin
   inherited Create(om, AParent, AFeedback);
   FShowAssoc := Config.DiShowAssoc;
   FVisibilityFilter := TVisibility( Config.DiVisibilityFilter );
+  OnCheckIgnored := nil;
 end;
 
 initialization

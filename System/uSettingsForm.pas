@@ -41,12 +41,15 @@ type
     eDotRankDir : TEdit;
     eDotURLPrefix : TEdit;
     GroupBox1 : TGroupBox;
+    GroupBox2 : TGroupBox;
+    Label10 : TLabel;
     Label4 : TLabel;
     Label5 : TLabel;
     Label6 : TLabel;
     Label7 : TLabel;
     Label8 : TLabel;
     Label9 : TLabel;
+    mdgIgnoreEntites : TMemo;
     OkButton: TButton;
     DiSaveCombo: TComboBox;
     Label1: TLabel;
@@ -121,6 +124,8 @@ begin
   cbDotSaveWithUrls.Checked := Config.DotAddUrls;
   cbxDotPortSide.Text :=       Config.DotPrefferedLabelConnector;
   cbxDotSplineStyle.Text :=    Config.DotSplines;
+  mdgIgnoreEntites.Lines.Delimiter := ';';
+  mdgIgnoreEntites.Lines.DelimitedText := Config.MDGenIgnoreEntites;
 end;
 
 procedure TSettingsForm.SaveSettings;
@@ -136,6 +141,8 @@ begin
   Config.DotAddUrls        := cbDotSaveWithUrls.Checked;
   Config.DotSplines        := cbxDotSplineStyle.Text;
   Config.DotPrefferedLabelConnector := cbxDotPortSide.Text;
+  mdgIgnoreEntites.Lines.Delimiter := ';';
+  Config.MDGenIgnoreEntites := mdgIgnoreEntites.Lines.DelimitedText;
   Config.StoreSettings;
 end;
 

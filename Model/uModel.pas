@@ -423,8 +423,7 @@ begin
       if E is TAttribute then
       begin
         if Assigned(TAttribute(E).TypeClassifier) then
-        if (TAttribute(E).TypeClassifier = olde) or
-           (SameText(olde.Name, TAttribute(E).TypeClassifier.Name)) then
+        if (TAttribute(E).TypeClassifier = olde) then
         begin
           TAttribute(E).TypeClassifier := newe as TClassifier;
           SetDependence(E);
@@ -434,8 +433,7 @@ begin
       if E is TOperation then
       begin
         if Assigned(TOperation(E).ReturnValue) then
-        if (TOperation(E).ReturnValue = olde) or
-           (SameText(olde.Name, TOperation(E).ReturnValue.Name)) then
+        if (TOperation(E).ReturnValue = olde) then
         begin
           TOperation(E).ReturnValue := newe as TClassifier;
           SetDependence(E);
@@ -446,8 +444,7 @@ begin
       if E is TParameter then
       begin
         if Assigned(TParameter(E).TypeClassifier) then
-        if (TParameter(E).TypeClassifier = olde) or
-           (SameText(olde.Name, TParameter(E).TypeClassifier.Name)) then
+        if (TParameter(E).TypeClassifier = olde) then
         begin
           TParameter(E).TypeClassifier := newe as TClassifier;
           SetDependence(E);
