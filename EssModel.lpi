@@ -21,7 +21,7 @@
     <MacroValues Count="1">
       <Macro1 Name="LCLWidgetType" Value="gtk2"/>
     </MacroValues>
-    <BuildModes Count="2">
+    <BuildModes Count="4">
       <Item1 Name="Debug" Default="True"/>
       <Item2 Name="Release">
         <MacroValues Count="1">
@@ -56,8 +56,84 @@
           </Linking>
         </CompilerOptions>
       </Item2>
-      <SharedMatrixOptions Count="1">
+      <Item3 Name="Debug Win">
+        <MacroValues Count="1">
+          <Macro2 Name="LCLWidgetType" Value="win32"/>
+        </MacroValues>
+        <CompilerOptions>
+          <Version Value="11"/>
+          <PathDelim Value="\"/>
+          <SearchPaths>
+            <IncludeFiles Value="Components;System;Model;Integrator\Code\Delphi;Integrator;CodeProvider;Integrator\CodeIO;Integrator\Code;Integrator\View;Integrator\View\RtfdDiagram;Integrator\Doc;Integrator\CodeIO\JavaClass;Integrator\Export;$(ProjOutDir)"/>
+            <Libraries Value="Components"/>
+            <OtherUnitFiles Value="Components;System;Model;Integrator\Code\Delphi;Integrator;CodeProvider;Integrator\CodeIO;Integrator\Code;Integrator\View;Integrator\View\RtfdDiagram;Integrator\Doc;Integrator\CodeIO\JavaClass;Integrator\Export"/>
+            <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)\Debug"/>
+            <ObjectPath Value="Components"/>
+          </SearchPaths>
+          <Parsing>
+            <SyntaxOptions>
+              <IncludeAssertionCode Value="True"/>
+            </SyntaxOptions>
+          </Parsing>
+          <CodeGeneration>
+            <Checks>
+              <IOChecks Value="True"/>
+              <RangeChecks Value="True"/>
+              <OverflowChecks Value="True"/>
+              <StackChecks Value="True"/>
+            </Checks>
+            <Optimizations>
+              <OptimizationLevel Value="0"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <UseExternalDbgSyms Value="True"/>
+            </Debugging>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
+          </Linking>
+        </CompilerOptions>
+      </Item3>
+      <Item4 Name="Release Win">
+        <MacroValues Count="1">
+          <Macro2 Name="LCLWidgetType" Value="win32"/>
+        </MacroValues>
+        <CompilerOptions>
+          <Version Value="11"/>
+          <PathDelim Value="\"/>
+          <SearchPaths>
+            <IncludeFiles Value="Components;System;Model;Integrator\Code\Delphi;Integrator;CodeProvider;Integrator\CodeIO;Integrator\Code;Integrator\View;Integrator\View\RtfdDiagram;Integrator\Doc;Integrator\CodeIO\JavaClass;Integrator\Export;$(ProjOutDir)"/>
+            <Libraries Value="Components"/>
+            <OtherUnitFiles Value="Components;System;Model;Integrator\Code\Delphi;Integrator;CodeProvider;Integrator\CodeIO;Integrator\Code;Integrator\View;Integrator\View\RtfdDiagram;Integrator\Doc;Integrator\CodeIO\JavaClass;Integrator\Export"/>
+            <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)\Release"/>
+            <ObjectPath Value="Components"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
+          </Linking>
+        </CompilerOptions>
+      </Item4>
+      <SharedMatrixOptions Count="2">
         <Item1 ID="136284461055" Modes="Debug,Release" Type="IDEMacro" MacroName="LCLWidgetType" Value="gtk2"/>
+        <Item2 ID="811002104120" Modes="Release Win,Debug Win" Type="IDEMacro" MacroName="LCLWidgetType" Value="win32"/>
       </SharedMatrixOptions>
     </BuildModes>
     <PublishOptions>

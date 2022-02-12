@@ -64,9 +64,9 @@ type
     function GetSourcefilename: String; virtual;
     procedure SetSourcefilename(const Value: String); virtual;
     {IUnknown, behövs för att kunna vara lyssnare}
-    function QueryInterface(constref IID: TGUID; out Obj): HResult; cdecl;
-    function _AddRef: Integer; cdecl;
-    function _Release: Integer;cdecl;
+    function QueryInterface({$IFDEF FPC_HAS_CONSTREF}constref{$ELSE}const{$ENDIF} IID: TGUID; out Obj): HResult; {$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
+    function _AddRef: Integer; {$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
+    function _Release: Integer;{$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
   public
     constructor Create(AOwner: TModelEntity); virtual;
     destructor Destroy; override;
@@ -235,18 +235,18 @@ begin
 end;
 
 
-function TModelEntity.QueryInterface(constref IID: TGUID; out Obj): HResult; cdecl;
+function TModelEntity.QueryInterface({$IFDEF FPC_HAS_CONSTREF}constref{$ELSE}const{$ENDIF} IID: TGUID; out Obj): HResult; {$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
 begin
   if GetInterface(IID, Obj) then Result := S_OK
   else Result := E_NOINTERFACE
 end;
 
-function TModelEntity._AddRef: Integer; cdecl;
+function TModelEntity._AddRef: Integer; {$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
 begin
   Result := -1; // -1 indicates no reference counting is taking place
 end;
 
-function TModelEntity._Release: Integer; cdecl;
+function TModelEntity._Release: Integer; {$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
 begin
   Result := -1; // -1 indicates no reference counting is taking place
 end;

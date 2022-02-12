@@ -435,7 +435,7 @@ end;
 function TessConnectPanel.ConnectObjects(Src, Dst: TControl;
   AStyle: TessConnectionStyle; Arrow : TessConnectionArrowStyle): Boolean;
 begin
-  ConnectObjectsLables(Src, Dst, nil, nil, AStyle, Arrow);
+  Result := ConnectObjectsLables(Src, Dst, nil, nil, AStyle, Arrow);
 end;
 
 function TessConnectPanel.ConnectObjectsLables(Src, Dst : TControl; SrcLab,
