@@ -75,7 +75,11 @@ uses uIntegrator, uConfig, uViewIntegrator;
 
 
 procedure TSettingsForm.FormCreate(Sender: TObject);
+var o : TDotPrefs;
 begin
+  sgDotPrefs.RowCount := Integer(High(TDotPrefs)) - Integer(Low(TDotPrefs)) + 2;
+  for o := Low(TDotPrefs) to High(TDotPrefs) do
+    sgDotPrefs.Cells[0, Byte(o)+1] := cDOTP2STR[o];
   ReadSettings;
   IDEChanged := False;
   ShellChanged := False;
@@ -105,6 +109,7 @@ end;
 
 procedure TSettingsForm.ReadSettings;
 var i : TDiagramKind;
+    o : TDotPrefs;
 begin
   DiSaveCombo.ItemIndex := integer(Config.DiSave);
   ShowAssocCheck.Checked := Config.DiShowAssoc;
@@ -116,20 +121,16 @@ begin
   cbDotSaveWithUrls.Checked := Config.DotAddUrls;
 
   for i := Low(TDiagramKind) to High(TDiagramKind) do
-  begin
-    sgDotPrefs.Cells[Byte(i)+1, 1] :=  Config.DotRankDir[i];
-    sgDotPrefs.Cells[Byte(i)+1, 2] :=  Config.DotRankSep[i];
-    sgDotPrefs.Cells[Byte(i)+1, 3] :=  Inttostr(Config.DotFontSize[i]);
-    sgDotPrefs.Cells[Byte(i)+1, 4] :=  Config.DotFontName[i];
-    sgDotPrefs.Cells[Byte(i)+1, 5] :=  Config.DotPort[i];
-    sgDotPrefs.Cells[Byte(i)+1, 6] :=  Config.DotSplines[i];
-  end;
+  for o := Low(TDotPrefs) to High(TDotPrefs) do
+    sgDotPrefs.Cells[Byte(i)+1, Byte(o)+1] :=  Config.DotPref[i, o];
+
   mdgIgnoreEntites.Lines.Delimiter := ';';
   mdgIgnoreEntites.Lines.DelimitedText := Config.MDGenIgnoreEntites;
 end;
 
 procedure TSettingsForm.SaveSettings;
 var i : TDiagramKind;
+    o : TDotPrefs;
 begin
   Config.DiSave := TDiSaveSetting(DiSaveCombo.ItemIndex);
   Config.DiShowAssoc := ShowAssocCheck.Checked;
@@ -141,14 +142,8 @@ begin
   Config.DotAddUrls        := cbDotSaveWithUrls.Checked;
 
   for i := Low(TDiagramKind) to High(TDiagramKind) do
-  begin
-    Config.DotRankDir[i]  := sgDotPrefs.Cells[Byte(i)+1, 1];
-    Config.DotRankSep[i]  := sgDotPrefs.Cells[Byte(i)+1, 2];
-    Config.DotFontSize[i] := StrToIntDef(sgDotPrefs.Cells[Byte(i)+1, 3], 14);
-    Config.DotFontName[i] := sgDotPrefs.Cells[Byte(i)+1, 4];
-    Config.DotPort[i]     := sgDotPrefs.Cells[Byte(i)+1, 5];
-    Config.DotSplines[i]  := sgDotPrefs.Cells[Byte(i)+1, 6];
-  end;
+  for o := Low(TDotPrefs) to High(TDotPrefs) do
+    Config.DotPref[i, o] := sgDotPrefs.Cells[Byte(i)+1, Byte(o)+1];
 
   mdgIgnoreEntites.Lines.Delimiter := ';';
   Config.MDGenIgnoreEntites := mdgIgnoreEntites.Lines.DelimitedText;

@@ -66,7 +66,7 @@ type
       procedure GetClasses(c: TFPList; AVisibility: TVisibility = viPublic; Recurse: Boolean = True);
       procedure PopulateMembers(ths: TClass; mems: TFPList); overload;
       procedure PopulateMembers(intf: TInterface; mems: TFPList); overload;
-      procedure PopulateClass(ths: TClass; cls: TPasClassType);
+      procedure PopulateClass(ths: TClass; cls: TPasMembersType);
       procedure PopulateInterface(intf: TInterface; cls: TPasClassType);
       procedure AddProcedure(op: TOperation; proc: TPasProcedure);
       procedure AddConstructor(op: TOperation; proc: TPasConstructor);
@@ -227,7 +227,8 @@ procedure TfpcParser.GetClasses(c: TFPList; AVisibility: TVisibility;
   Recurse: Boolean);
 var
   i: integer;
-  cls: TPasClassType;
+  cls : TPasClassType;
+  rec : TPasRecordType;
   ths: TClass;
   intf: TInterface;
 begin
@@ -235,6 +236,8 @@ begin
   begin
      for i := 0 to c.Count- 1 do
      begin
+       if TObject(c.Items[i]) is TPasClassType then
+       begin
         cls := TPasClassType(c.Items[i]);
         case cls.ObjKind of
           okObject, okClass:
@@ -250,9 +253,18 @@ begin
 //  TODO        okGeneric, okSpecialize,
 //  or NOT      okClassHelper,okRecordHelper,okTypeHelper
         end;
+       end else
+       if TObject(c.Items[i]) is TPasRecordType then
+       begin
+         rec := TPasRecordType(c.Items[i]);
+         ths := FUnit.AddClass(rec.Name);
+         ths.SourceY := rec.SourceLinenumber;
+       end;
      end;
      for i := 0 to c.Count- 1 do
      begin
+       if TObject(c.Items[i]) is TPasClassType then
+       begin
         cls := TPasClassType(c.Items[i]);
         case cls.ObjKind of
           okObject, okClass:
@@ -268,6 +280,13 @@ begin
 //  TODO        okGeneric, okSpecialize,
 //  or NOT      okClassHelper,okRecordHelper,okTypeHelper
         end;
+       end else
+       if TObject(c.Items[i]) is TPasRecordType then
+       begin
+         rec := TPasRecordType(c.Items[i]);
+         ths := TClass(FUnit.FindClassifier(rec.Name));
+         PopulateClass(ths, rec);
+       end;
      end;
   end;
 
@@ -403,7 +422,7 @@ begin
    end;
 end;
 
-procedure TfpcParser.PopulateClass(ths: TClass; cls: TPasClassType);
+procedure TfpcParser.PopulateClass(ths: TClass; cls: TPasMembersType);
 var
   ans: TPasType;
   ancestor: TClass;
@@ -412,9 +431,9 @@ var
   intfs: TFPList;
   i: integer;
 begin
-  if Assigned(cls.AncestorType) then
+  if (cls is TPasClassType) and Assigned(TPasClassType(cls).AncestorType) then
   begin
-    ans := TPasType(cls.AncestorType);
+    ans := TPasType(TPasClassType(cls).AncestorType);
     if Length(ans.Name) = 0 then //some empty parent name -> TObject
     begin
       ans.Name := 'TObject';
@@ -432,9 +451,9 @@ begin
       ths.Ancestor := FOM.UnknownPackage.AddClass(ans.Name);
   end;
 
-  If Assigned(cls.Interfaces) then
+  If (cls is TPasClassType) and Assigned(TPasClassType(cls).Interfaces) then
   begin
-    intfs:= cls.Interfaces;
+    intfs:= TPasClassType(cls).Interfaces;
     for i := 0 to intfs.Count -1 do
     begin
       intf := getInterfaceRef(TPasType(intfs[i]).Name);

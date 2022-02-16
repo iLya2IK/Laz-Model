@@ -34,7 +34,7 @@ type
   // Available linestyles
   TessConnectionStyle = (csThin, csNormal, csThinDash);
   //Different kinds of arrowheads
-  TessConnectionArrowStyle = (asEmptyOpen,asEmptyClosed,asDiamond);
+  TessConnectionArrowStyle = (asEmptyOpen,asEmptyClosed,asDiamond,asBothDiamond);
 
   {
     Specifies a connection between two managed objects.

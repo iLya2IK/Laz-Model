@@ -239,6 +239,57 @@ end;
 procedure TRtfdDiagram.SaveAsDotGraph(DK : TDiagramKind; const FileName : string
   );
 
+var AddCons : TList;
+
+procedure OptimizeConnections(CL : TList);
+var i : integer;
+    j : Integer;
+    Con, NCon : TConnection;
+    frp, tpo, frn, ton : TComponent;
+    found : Integer;
+begin
+  i := 0;
+  while i < CL.Count do
+  begin
+    Con := TConnection(CL[i]);
+    frp := Con.FLabFrom;
+    tpo := Con.FLabTo;
+    found := -1;
+    if Assigned(frp) and (not Assigned(tpo)) then
+    begin
+      frn := Con.FFrom;
+      ton := Con.FTo;
+      j := i + 1;
+      while j < CL.Count do
+      begin
+        Con := TConnection(CL[j]);
+        if (Con.FFrom = ton) and Assigned(Con.FLabFrom) and
+           (Con.FTo = frn) then
+        begin
+          NCon := TConnection.Create;
+          NCon.FFrom := TControl(frn);
+          NCon.FLabFrom := frp;
+          NCon.FTo := TControl(ton);
+          NCon.FLabTo := Con.FLabFrom;
+          NCon.ArrowStyle := asBothDiamond;
+          NCon.FConnectStyle := csThinDash;
+          found := j;
+          break;
+        end;
+        Inc(j);
+      end;
+    end;
+    if found > 0 then
+    begin
+      CL.Delete(found);
+      CL.Delete(i);
+      CL.Add(NCon);
+      AddCons.Add(NCon);
+    end else
+      Inc(i);
+  end;
+end;
+
 function CheckVis(E : TModelEntity) : Boolean;
 begin
   if not assigned(E) then Exit(true);
@@ -267,23 +318,25 @@ begin
   try
     SL.Add('digraph {');
     SL.Add('graph [');
-    SL.Add('rankdir = "'+Config.DotRankDir[DK]+'"');
-    SL.Add('ranksep = "'+Config.DotRankSep[DK]+'"');
-    SL.Add('splines = "'+Config.DotSplines[DK]+'"');
+    SL.Add('rankdir = "'+Config.DotPref[DK, dotRankDir]+'"');
+    SL.Add('ranksep = "'+Config.DotPref[DK, dotRankSep]+'"');
+    SL.Add('nodesep = "'+Config.DotPref[DK, dotNodeSep]+'"');
+    SL.Add('splines = "'+Config.DotPref[DK, dotSplines]+'"');
+    SL.Add('concentrate = "'+Config.DotPref[DK, dotConcentrate]+'"');
     SL.Add('];');
     SL.Add('node [');
-    SL.Add('fontsize = "'+Inttostr(Config.DotFontSize[DK])+'"');
-    SL.Add('fontname = "'+Config.DotFontName[DK]+'"');
+    SL.Add('fontsize = "'+Config.DotPref[DK, dotFontSize]+'"');
+    SL.Add('fontname = "'+Config.DotPref[DK, dotFontName]+'"');
     SL.Add('shape = "rect"');
     SL.Add('];');
 
-    if Config.DotPort[DK] = 'w' then
+    if Config.DotPref[DK, dotPort] = 'w' then
     begin
       side := 'w';
       opside := 'e';
       useside := true;
     end else
-    if Config.DotPort[DK] = 'e' then
+    if Config.DotPref[DK, dotPort] = 'e' then
     begin
       side := 'e';
       opside := 'w';
@@ -295,164 +348,182 @@ begin
       useside := false;
     end;
 
-    ManagedObjs := Panel.GetManagedObjects;
-    Connections := Panel.GetConnections;
+    AddCons := TList.Create;
     try
-      for i := 0 to ManagedObjs.Count-1 do
-      begin
-        Obj := TRtfdBox(ManagedObjs[i]);
-        if Obj.Visible and CheckVis(Obj.Entity) then
+      ManagedObjs := Panel.GetManagedObjects;
+      Connections := Panel.GetConnections;
+      try
+        OptimizeConnections(Connections);
+
+        for i := 0 to ManagedObjs.Count-1 do
         begin
-          if Obj is TRtfdUnitPackage then
+          Obj := TRtfdBox(ManagedObjs[i]);
+          if Obj.Visible and CheckVis(Obj.Entity) then
           begin
-            if Config.DotAddUrls then
+            if Obj is TRtfdUnitPackage then
             begin
-              SL.Add(Format('"%.8X" [URL="%s";label="%s";shape="tab"];',
-                                  [PtrInt(Obj), Config.DotUrlsPrefix + Obj.Entity.FullURIName, TRtfdUnitPackage(Obj).P.Name]));
-            end else
-            begin
-              SL.Add(Format('"%.8X" [label="%s";shape="tab"];',
-                                  [PtrInt(Obj), TRtfdUnitPackage(Obj).P.Name]));
-            end;
-          end else
-          if Obj is TRtfdClass then
-          begin
-            S := Format('"%.8X" [label=<<table border="1" cellborder="1" cellspacing="0">', [PtrInt(Obj)]);
-
-            for j := 0 to TRtfdClass(Obj).ComponentCount-1 do
-            begin
-              if (TRtfdClass(Obj).Components[j] is TRtfdCustomLabel) then
+              if Config.DotAddUrls then
               begin
-                Lab := TRtfdClass(Obj).Components[j] as TRtfdCustomLabel;
+                SL.Add(Format('"%.1X" [URL="%s";label="%s";shape="tab"];',
+                                    [Obj.ComponentIndex, Config.DotUrlsPrefix + Obj.Entity.FullURIName, TRtfdUnitPackage(Obj).P.Name]));
+              end else
+              begin
+                SL.Add(Format('"%.1X" [label="%s";shape="tab"];',
+                                    [Obj.ComponentIndex, TRtfdUnitPackage(Obj).P.Name]));
+              end;
+            end else
+            if Obj is TRtfdClass then
+            begin
+              S := Format('"%.1X" [label=<<table border="1" cellborder="1" cellspacing="0">',
+                                    [Obj.ComponentIndex,  Obj.ComponentIndex]);
 
-                if (Lab is TRtfdOperation) or
-                   (Lab is TRtfdAttribute) then
+              for j := 0 to TRtfdClass(Obj).ComponentCount-1 do
+              begin
+                if (TRtfdClass(Obj).Components[j] is TRtfdCustomLabel) then
                 begin
-                  if Assigned(Lab.ModelEntity) then
-                    vis := Lab.ModelEntity.Visibility else
-                    vis := viPublic;
-                end else vis := viPublic;
+                  Lab := TRtfdClass(Obj).Components[j] as TRtfdCustomLabel;
 
-                if (vis >= VisibilityFilter) and CheckVis(Lab.ModelEntity) then
-                begin
-                  s := s + '<tr>';
-                  if Assigned(Lab.ModelEntity) and
-                    (Lab.ModelEntity is TFeature) then
+                  if (Lab is TRtfdOperation) or
+                     (Lab is TRtfdAttribute) then
                   begin
-                    case vis of
-                      viPrivate:
-                      s := s + '<td border="0">-</td>';
-                      viProtected:
-                      s := s + '<td border="0">#</td>';
-                      viPublic, viPublished:
-                      s := s + '<td border="0">+</td>';
+                    if Assigned(Lab.ModelEntity) then
+                      vis := Lab.ModelEntity.Visibility else
+                      vis := viPublic;
+                  end else vis := viPublic;
+
+                  if (vis >= VisibilityFilter) and CheckVis(Lab.ModelEntity) then
+                  begin
+                    s := s + '<tr>';
+                    if Assigned(Lab.ModelEntity) and
+                      (Lab.ModelEntity is TFeature) then
+                    begin
+                      case vis of
+                        viPrivate:
+                        s := s + '<td border="0">-</td>';
+                        viProtected:
+                        s := s + '<td border="0">#</td>';
+                        viPublic, viPublished:
+                        s := s + '<td border="0">+</td>';
+                      end;
                     end;
-                  end;
 
-                  if Config.DotAddUrls and Assigned(Lab.ModelEntity) then
-                    S := s + Format('<td port="%.8X" href="%s" title="%s" ',
-                                        [PtrInt(Lab), Config.DotUrlsPrefix + Lab.ModelEntity.FullURIName, Lab.ModelEntity.FullName])
-                  else
-                    s := s + Format('<td port="%.8X" ', [PtrInt(Lab)]);
-                  if Lab is TRtfdSeparator then
-                  begin
-                    s := s + 'colspan="2" sides="T" ';
-                  end else
-                  if Lab is TRtfdClassName then
-                  begin
-                    s := s + 'colspan="2" border="0" bgcolor="#eeeeee" color="black" align="center" ';
-                  end else
-                  begin
-                    s := s + 'border="0" align="left" ';
+                    if Config.DotAddUrls and Assigned(Lab.ModelEntity) then
+                      S := s + Format('<td port="%.1X" href="%s" title="%s" ',
+                                          [Lab.ComponentIndex, Config.DotUrlsPrefix + Lab.ModelEntity.FullURIName, Lab.ModelEntity.FullName])
+                    else
+                      s := s + Format('<td port="%.1X" ', [Lab.ComponentIndex]);
+                    if Lab is TRtfdSeparator then
+                    begin
+                      s := s + 'colspan="2" sides="T" ';
+                    end else
+                    if Lab is TRtfdClassName then
+                    begin
+                      s := s + 'colspan="2" border="0" bgcolor="#eeeeee" color="black" align="center" ';
+                    end else
+                    begin
+                      s := s + 'border="0" align="left" ';
+                    end;
+                    s := s + '>';
+                    s := s + Lab.Caption;
+                    s := s + '</td></tr>';
                   end;
-                  s := s + '>';
-                  s := s + Lab.Caption;
-                  s := s + '</td></tr>';
                 end;
               end;
+              S := S + '</table>>; shape="plain"];';
+              SL.Add(S);
             end;
-            S := S + '</table>>; shape="plain"];';
-            SL.Add(S);
           end;
         end;
+        edgnum := 0;
+        lstEdgeArrow := asEmptyOpen;
+        lstEdgeStyle := csNormal;
+        for i := 0 to Connections.Count-1 do
+        begin
+          Con := TConnection(Connections[i]);
+          frn := nil;
+          ton := nil;
+          frp := nil;
+          tpo := nil;
+          if Con.FLabFrom is TRtfdCustomLabel then
+          begin
+            frn := Con.FFrom;
+            frp := Con.FLabFrom;
+          end else
+            frn := Con.FFrom;
+          if Con.FLabTo is TRtfdCustomLabel then
+          begin
+            ton := Con.FTo;
+            tpo := Con.FLabTo;
+          end else
+            ton := Con.FTo;
+          if Assigned(frn) and Assigned(ton) and
+             TRtfdBox(frn).Visible and TRtfdBox(ton).Visible and
+             CheckVis(TRtfdBox(frn).Entity) and
+             CheckVis(TRtfdBox(ton).Entity) then
+          begin
+            if (lstEdgeStyle <> Con.FConnectStyle) or (edgnum = 0) then
+            begin
+              S := 'edge [style=';
+              case Con.FConnectStyle of
+                csThin : s := s + 'solid';
+                csNormal : s := s + 'bold';
+                csThinDash : s := s + 'dashed';
+              end;
+              s := s + ']';
+              SL.Add(S);
+              lstEdgeStyle := Con.FConnectStyle;
+            end;
+
+            if (lstEdgeArrow <> Con.ArrowStyle) or (edgnum = 0) then
+            begin
+              S := 'edge [';
+              case Con.ArrowStyle of
+                asEmptyOpen : s := s + 'dir=forward arrowhead=vee';
+                asEmptyClosed : s := s + 'dir=forward arrowhead=empty';
+                asDiamond : s := s + 'dir=back arrowtail=odiamond';
+                asBothDiamond : s := s + 'dir=both arrowtail=odiamond arrowhead=odiamond';
+              end;
+              s := s + ']';
+              SL.Add(S);
+              lstEdgeArrow := Con.ArrowStyle;
+            end;
+
+            if Assigned(frp) then
+            begin
+              S := Format('"%.1X":"%.1X"', [frn.ComponentIndex, frp.ComponentIndex]);
+              if useside then
+                S := S + ':' + side;
+            end else
+              S := Format('"%.1X"', [frn.ComponentIndex]);
+
+            S := S + ' -> ';
+            if Assigned(tpo) then
+            begin
+              S := S + Format('"%.1X":"%.1X"', [ton.ComponentIndex, tpo.ComponentIndex]);
+              if useside then
+                S := S + ':' + opside;
+            end else
+              S := S + Format('"%.1X"', [ton.ComponentIndex]);
+
+           { if Con.ArrowStyle = asBothDiamond then
+              S := S + ' [constraint=false]';
+           }
+
+            SL.Add(S);
+
+            Inc(edgnum);
+          end;
+        end;
+      finally
+        Connections.Free;
+        ManagedObjs.Free;
       end;
-      edgnum := 0;
-      lstEdgeArrow := asEmptyOpen;
-      lstEdgeStyle := csNormal;
-      for i := 0 to Connections.Count-1 do
+      for i := 0 to AddCons.Count-1 do
       begin
-        Con := TConnection(Connections[i]);
-        frn := nil;
-        ton := nil;
-        frp := nil;
-        tpo := nil;
-        if Con.FLabFrom is TRtfdCustomLabel then
-        begin
-          frn := Con.FFrom;
-          frp := Con.FLabFrom;
-        end else
-          frn := Con.FFrom;
-        if Con.FLabTo is TRtfdCustomLabel then
-        begin
-          ton := Con.FTo;
-          tpo := Con.FLabTo;
-        end else
-          ton := Con.FTo;
-        if Assigned(frn) and Assigned(ton) and
-           TRtfdBox(frn).Visible and TRtfdBox(ton).Visible and
-           CheckVis(TRtfdBox(frn).Entity) and
-           CheckVis(TRtfdBox(ton).Entity) then
-        begin
-          if (lstEdgeStyle <> Con.FConnectStyle) or (edgnum = 0) then
-          begin
-            S := 'edge [style=';
-            case Con.FConnectStyle of
-              csThin : s := s + 'solid';
-              csNormal : s := s + 'bold';
-              csThinDash : s := s + 'dashed';
-            end;
-            s := s + ']';
-            SL.Add(S);
-            lstEdgeStyle := Con.FConnectStyle;
-          end;
-
-          if (lstEdgeArrow <> Con.ArrowStyle) or (edgnum = 0) then
-          begin
-            S := 'edge [';
-            case Con.ArrowStyle of
-              asEmptyOpen : s := s + 'dir=forward arrowhead=vee';
-              asEmptyClosed : s := s + 'dir=forward arrowhead=empty';
-              asDiamond : s := s + 'dir=back arrowtail=odiamond';
-            end;
-            s := s + ']';
-            SL.Add(S);
-            lstEdgeArrow := Con.ArrowStyle;
-          end;
-
-          if Assigned(frp) then
-          begin
-            S := Format('"%.8X":"%.8X"', [PtrInt(frn), PtrInt(frp)]);
-            if useside then
-              S := S + ':' + side;
-          end else
-            S := Format('"%.8X"', [PtrInt(frn)]);
-          S := S + ' -> ';
-          if Assigned(tpo) then
-          begin
-            S := S + Format('"%.8X":"%.8X"', [PtrInt(ton), PtrInt(tpo)]);
-            if useside then
-              S := S + ':' + opside;
-          end else
-            S := S + Format('"%.8X"', [PtrInt(ton)]);
-
-          SL.Add(S);
-
-          Inc(edgnum);
-        end;
+        TConnection(AddCons[i]).Free;
       end;
     finally
-      Connections.Free;
-      ManagedObjs.Free;
+      AddCons.Free;
     end;
 
     SL.Add('}');
