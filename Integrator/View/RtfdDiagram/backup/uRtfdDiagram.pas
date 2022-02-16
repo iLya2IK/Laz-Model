@@ -274,7 +274,7 @@ begin
     SL.Add('node [');
     SL.Add('fontsize = "'+Inttostr(Config.DotFontSize[DK])+'"');
     SL.Add('fontname = "'+Config.DotFontName[DK]+'"');
-    SL.Add('shape = "rect"');
+    SL.Add('shape = "ellipse"');
     SL.Add('];');
 
     if Config.DotPort[DK] = 'w' then

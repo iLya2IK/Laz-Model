@@ -646,6 +646,8 @@ end;
 procedure TMainModule.SaveDiagramActionExecute(Sender: TObject);
 const
   D : TSaveDialog = nil;
+var
+  DK : TDiagramKind;
 begin
   if not Assigned(D) then
   begin
@@ -667,7 +669,10 @@ begin
     end else
     if SameText(ExtractFileExt(D.FileName),'.dot') then
     begin
-      Diagram.SaveAsDotGraph( D.FileName );
+      if Diagram.Package = Diagram.Model.ModelRoot then
+        DK := diakPackage else
+        DK := diakClass;
+      Diagram.SaveAsDotGraph( DK, D.FileName );
     end;
   end;
 end;

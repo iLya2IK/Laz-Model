@@ -29,6 +29,8 @@ uses uIntegrator, uModel, uModelEntity, Controls, Graphics,
 
 type
 
+  TDiagramKind = (diakPackage, diakClass);
+
   //Baseclass for integrators that are parented
   TViewIntegrator = class(TTwowayIntegrator)
   private
@@ -75,7 +77,7 @@ type
     function GetSelectedRect : TRect; virtual; abstract;
     procedure PaintTo(Canvas: TCanvas; X, Y: integer; SelectedOnly : boolean); virtual; abstract;
     procedure SaveAsPicture(const FileName : string);
-    procedure SaveAsDotGraph(const FileName : string); virtual; abstract;
+    procedure SaveAsDotGraph(DK : TDiagramKind; const FileName : string); virtual; abstract;
     procedure DoLayout; virtual; abstract;
     function GetClickAreas : TStringList; virtual; abstract;
     procedure DrawZoom(Canvas : TCanvas; W,H : integer); virtual; abstract;

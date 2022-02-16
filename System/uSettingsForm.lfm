@@ -1,12 +1,12 @@
 object SettingsForm: TSettingsForm
   Left = 366
-  Height = 388
+  Height = 413
   Top = 185
   Width = 542
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Settings'
-  ClientHeight = 388
+  ClientHeight = 413
   ClientWidth = 542
   Color = clBtnFace
   Font.Color = clWindowText
@@ -14,35 +14,32 @@ object SettingsForm: TSettingsForm
   Font.Name = 'MS Sans Serif'
   OnCreate = FormCreate
   Position = poScreenCenter
-  LCLVersion = '2.0.12.0'
+  LCLVersion = '2.2.0.4'
   object Label1: TLabel
     Left = 8
-    Height = 14
+    Height = 13
     Top = 10
-    Width = 167
+    Width = 141
     Caption = 'Save changed diagram layout'
-    ParentColor = False
   end
   object Label2: TLabel
     Left = 9
-    Height = 14
+    Height = 13
     Top = 79
-    Width = 165
+    Width = 132
     Caption = 'Default diagram visibilty filter'
-    ParentColor = False
   end
   object Label3: TLabel
     Left = 11
-    Height = 14
+    Height = 13
     Top = 103
-    Width = 178
+    Width = 148
     Caption = 'Commandline to execute editor:'
-    ParentColor = False
   end
   object OkButton: TButton
     Left = 379
     Height = 25
-    Top = 356
+    Top = 381
     Width = 75
     Anchors = [akRight, akBottom]
     Caption = 'OK'
@@ -52,10 +49,10 @@ object SettingsForm: TSettingsForm
   end
   object DiSaveCombo: TComboBox
     Left = 158
-    Height = 27
+    Height = 21
     Top = 8
     Width = 70
-    ItemHeight = 0
+    ItemHeight = 13
     Items.Strings = (
       'always'
       'ask'
@@ -67,7 +64,7 @@ object SettingsForm: TSettingsForm
   object Button2: TButton
     Left = 461
     Height = 25
-    Top = 356
+    Top = 381
     Width = 75
     Anchors = [akRight, akBottom]
     Caption = 'Cancel'
@@ -76,18 +73,18 @@ object SettingsForm: TSettingsForm
   end
   object ShowAssocCheck: TCheckBox
     Left = 8
-    Height = 23
+    Height = 19
     Top = 47
-    Width = 255
+    Width = 213
     Caption = 'Show associations in diagrams as default'
     TabOrder = 3
   end
   object VisibilityCombo: TComboBox
     Left = 179
-    Height = 27
+    Height = 21
     Top = 66
     Width = 145
-    ItemHeight = 0
+    ItemHeight = 13
     Items.Strings = (
       'Show all members'
       'Hide private'
@@ -100,7 +97,7 @@ object SettingsForm: TSettingsForm
   end
   object eEditorCommandLine: TEdit
     Left = 11
-    Height = 31
+    Height = 21
     Top = 119
     Width = 308
     TabOrder = 5
@@ -108,7 +105,7 @@ object SettingsForm: TSettingsForm
   end
   object eAdditionalDefines: TEdit
     Left = 11
-    Height = 31
+    Height = 21
     Top = 175
     Width = 308
     TabOrder = 6
@@ -116,151 +113,142 @@ object SettingsForm: TSettingsForm
   end
   object Label4: TLabel
     Left = 11
-    Height = 14
+    Height = 13
     Top = 159
-    Width = 103
+    Width = 86
     Caption = 'Additional defines:'
-    ParentColor = False
   end
   object GroupBox1: TGroupBox
     Left = 336
-    Height = 336
+    Height = 360
     Top = 8
     Width = 201
     Caption = 'Dot export'
-    ClientHeight = 321
-    ClientWidth = 199
+    ClientHeight = 342
+    ClientWidth = 197
     TabOrder = 7
     object cbDotSaveWithUrls: TCheckBox
       Left = 8
-      Height = 23
+      Height = 19
       Top = 8
-      Width = 111
+      Width = 97
       Caption = 'Save with URLs'
       TabOrder = 0
     end
     object Label5: TLabel
       Left = 8
-      Height = 14
+      Height = 13
       Top = 32
-      Width = 57
+      Width = 50
       Caption = 'URL prefix'
-      ParentColor = False
     end
     object eDotURLPrefix: TEdit
       Left = 8
-      Height = 31
+      Height = 21
       Top = 48
       Width = 184
       TabOrder = 1
     end
-    object Label6: TLabel
-      Left = 8
-      Height = 14
+    object sgDotPrefs: TStringGrid
+      Left = 6
+      Height = 240
       Top = 88
-      Width = 49
-      Caption = 'Font size'
-      ParentColor = False
-    end
-    object seDotFontSize: TSpinEdit
-      Left = 8
-      Height = 31
-      Top = 104
-      Width = 81
-      MinValue = 2
+      Width = 186
+      ColCount = 3
+      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing, goSmoothScroll]
+      RowCount = 7
       TabOrder = 2
-      Value = 12
-    end
-    object Label7: TLabel
-      Left = 8
-      Height = 14
-      Top = 147
-      Width = 78
-      Caption = 'Graph rankdir'
-      ParentColor = False
-    end
-    object eDotRankDir: TEdit
-      Left = 8
-      Height = 31
-      Top = 168
-      Width = 80
-      TabOrder = 3
-      Text = 'BT'
-    end
-    object cbxDotSplineStyle: TComboBox
-      Left = 8
-      Height = 27
-      Top = 223
-      Width = 100
-      ItemHeight = 0
-      ItemIndex = 0
-      Items.Strings = (
+      ColWidths = (
+        61
+        59
+        51
+      )
+      Cells = (
+        20
+        0
+        1
+        'rankdir'
+        0
+        2
+        'ranksep'
+        0
+        3
+        'fontsize'
+        0
+        4
+        'fontname'
+        0
+        5
+        'port'
+        0
+        6
         'spline'
-        'line'
-        'polyline'
-        'curved'
+        1
+        0
+        'overview'
+        1
+        1
+        'BT'
+        1
+        2
+        '0.75'
+        1
+        3
+        '12'
+        1
+        4
+        'sans'
+        1
+        5
+        '_'
+        1
+        6
+        'true'
+        2
+        0
+        'class'
+        2
+        1
+        'LR'
+        2
+        2
+        '1.25'
+        2
+        3
+        '12'
+        2
+        4
+        'mono'
+        2
+        5
+        'e'
+        2
+        6
         'ortho'
       )
-      Style = csDropDownList
-      TabOrder = 4
-      Text = 'spline'
-    end
-    object Label8: TLabel
-      Left = 8
-      Height = 14
-      Top = 204
-      Width = 99
-      Caption = 'Connections style'
-      ParentColor = False
-      OnClick = Label8Click
-    end
-    object Label9: TLabel
-      Left = 8
-      Height = 14
-      Top = 262
-      Width = 180
-      Caption = 'Preffered port side connection pt'
-      ParentColor = False
-    end
-    object cbxDotPortSide: TComboBox
-      Left = 8
-      Height = 27
-      Top = 283
-      Width = 100
-      ItemHeight = 0
-      ItemIndex = 0
-      Items.Strings = (
-        '_'
-        'w'
-        'e'
-      )
-      Style = csDropDownList
-      TabOrder = 5
-      Text = '_'
     end
   end
   object GroupBox2: TGroupBox
     Left = 8
-    Height = 128
+    Height = 152
     Top = 216
-    Width = 316
+    Width = 320
     Caption = 'Markdown generator'
-    ClientHeight = 113
-    ClientWidth = 314
+    ClientHeight = 134
+    ClientWidth = 316
     TabOrder = 8
     object Label10: TLabel
       Left = 8
-      Height = 14
+      Height = 13
       Top = 8
-      Width = 76
+      Width = 65
       Caption = 'Ignore Entites'
-      ParentColor = False
     end
     object mdgIgnoreEntites: TMemo
       Left = 8
-      Height = 80
+      Height = 96
       Top = 24
-      Width = 150
+      Width = 144
       TabOrder = 0
     end
   end

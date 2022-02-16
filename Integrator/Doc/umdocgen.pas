@@ -46,22 +46,22 @@ var
   W,H : integer;
   ImageFileName : string;
 
-  oldRnk, oldPortPos, oldSplines : String;
+  DK : TDiagramKind;
   oldUseURL : Boolean;
 
   IsRoot : boolean;
 begin
   IsRoot := P=Model.ModelRoot;
 
-  if IsRoot then
-    ImageFileName := DestPath + OverviewPackage + '.dot' else
+  if IsRoot then begin
+    ImageFileName := DestPath + OverviewPackage + '.dot';
+    DK := diakPackage;
+  end else begin
     ImageFileName := DestPath + p.FullURIName + '.dot';
+    DK := diakClass;
+  end;
 
-  oldRnk := Config.DotRankDir;
-  oldPortPos := Config.DotPrefferedLabelConnector;
-  oldSplines := Config.DotSplines;
-  oldUseURL := Config.DotAddUrls;
-
+  oldUseURL   := Config.DotAddUrls;
   Config.DotAddUrls := true;
 
   TempForm := TForm.CreateNew(nil);
@@ -69,17 +69,6 @@ begin
   try
     Di.VisibilityFilter := viPublic;
     Di.ShowAssoc := true;
-    if IsRoot then
-    begin
-      Config.DotRankDir := 'BT';
-      Config.DotPrefferedLabelConnector := '_';
-      Config.DotSplines := 'true';
-    end else
-    begin
-      Config.DotRankDir := 'LR';
-      Config.DotPrefferedLabelConnector := 'e';
-      Config.DotSplines := 'ortho';
-    end;
 
     Di.Package := P;
     Di.InitFromModel;
@@ -91,7 +80,7 @@ begin
     TempForm.Top := Screen.Height;
     TempForm.Show;
     Di.OnCheckIgnored := @CheckIsIgnored;
-    Di.SaveAsDotGraph(ImageFileName);
+    Di.SaveAsDotGraph(DK, ImageFileName);
     TempForm.Hide;
 
   finally
@@ -99,9 +88,6 @@ begin
     TempForm.Free;
   end;
 
-  Config.DotRankDir := oldRnk;
-  Config.DotPrefferedLabelConnector := oldPortPos;
-  Config.DotSplines := oldSplines;
   Config.DotAddUrls := oldUseURL;
 end;
 
