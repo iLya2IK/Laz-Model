@@ -247,6 +247,7 @@ var i : integer;
     Con, NCon : TConnection;
     frp, tpo, frn, ton : TComponent;
     found : Integer;
+    arF : TessConnectionArrowStyle;
 begin
   i := 0;
   while i < CL.Count do
@@ -254,6 +255,7 @@ begin
     Con := TConnection(CL[i]);
     frp := Con.FLabFrom;
     tpo := Con.FLabTo;
+    arF := Con.ArrowFromStyle;
     found := -1;
     if Assigned(frp) and (not Assigned(tpo)) then
     begin
@@ -271,7 +273,8 @@ begin
           NCon.FLabFrom := frp;
           NCon.FTo := TControl(ton);
           NCon.FLabTo := Con.FLabFrom;
-          NCon.ArrowStyle := asBothDiamond;
+          NCon.ArrowFromStyle := arF;
+          NCon.ArrowToStyle := Con.ArrowFromStyle;
           NCon.FConnectStyle := csThinDash;
           found := j;
           break;
@@ -311,7 +314,7 @@ var SL : TStringList;
     vis : TVisibility;
 
     lstEdgeStyle : TessConnectionStyle;
-    lstEdgeArrow : TessConnectionArrowStyle;
+    lstEdgeToArrow, lstEdgeFromArrow : TessConnectionArrowStyle;
     edgnum : integer;
 begin
   SL := TStringList.Create;
@@ -328,6 +331,10 @@ begin
     SL.Add('fontsize = "'+Config.DotPref[DK, dotFontSize]+'"');
     SL.Add('fontname = "'+Config.DotPref[DK, dotFontName]+'"');
     SL.Add('shape = "rect"');
+    SL.Add('];');
+    SL.Add('edge [');
+    SL.Add('fontsize = "'+Config.DotPref[DK, dotFontSize]+'"');
+    SL.Add('fontname = "'+Config.DotPref[DK, dotFontName]+'"');
     SL.Add('];');
 
     if Config.DotPref[DK, dotPort] = 'w' then
@@ -435,7 +442,8 @@ begin
           end;
         end;
         edgnum := 0;
-        lstEdgeArrow := asEmptyOpen;
+        lstEdgeToArrow := asNone;
+        lstEdgeFromArrow := asNone;
         lstEdgeStyle := csNormal;
         for i := 0 to Connections.Count-1 do
         begin
@@ -474,18 +482,34 @@ begin
               lstEdgeStyle := Con.FConnectStyle;
             end;
 
-            if (lstEdgeArrow <> Con.ArrowStyle) or (edgnum = 0) then
+            if (lstEdgeToArrow <> Con.ArrowToStyle) or
+               (lstEdgeFromArrow <> Con.ArrowFromStyle) then
             begin
               S := 'edge [';
-              case Con.ArrowStyle of
-                asEmptyOpen : s := s + 'dir=forward arrowhead=vee';
-                asEmptyClosed : s := s + 'dir=forward arrowhead=empty';
-                asDiamond : s := s + 'dir=back arrowtail=odiamond';
-                asBothDiamond : s := s + 'dir=both arrowtail=odiamond arrowhead=odiamond';
+
+              if (Con.ArrowToStyle <> asNone) and
+                 (Con.ArrowFromStyle <> asNone) then
+                 s := s + 'dir=both' else
+              if (Con.ArrowToStyle <> asNone)  then
+                 s := s + 'dir=forward' else
+              if (Con.ArrowFromStyle <> asNone) then
+                 s := s + 'dir=back' else
+                 s := s + 'dir=none';
+
+              case Con.ArrowToStyle of
+                asEmptyOpen : s := s + ' arrowhead=vee';
+                asEmptyClosed : s := s + ' arrowhead=empty';
+                asDiamond : s := s + ' arrowhead=odiamond';
+              end;
+              case Con.ArrowFromStyle of
+                asEmptyOpen : s := s + ' arrowtail=vee';
+                asEmptyClosed : s := s + ' arrowtail=empty';
+                asDiamond : s := s + ' arrowtail=odiamond';
               end;
               s := s + ']';
               SL.Add(S);
-              lstEdgeArrow := Con.ArrowStyle;
+              lstEdgeFromArrow := Con.ArrowFromStyle;
+              lstEdgeToArrow := Con.ArrowToStyle;
             end;
 
             if Assigned(frp) then
@@ -504,6 +528,9 @@ begin
                 S := S + ':' + opside;
             end else
               S := S + Format('"%.1X"', [ton.ComponentIndex]);
+
+            if Length(Con.FLabel) > 0 then
+              S := S + '[label='+Con.FLabel+']';
 
            { if Con.ArrowStyle = asBothDiamond then
               S := S + ' [constraint=false]';
@@ -675,12 +702,16 @@ var
   CBox: TRtfdClass;
   IBox : TRtfdInterface;
   A : TAttribute;
+  O : uModel.TOperation;
 
   UBox : TRtfdUnitPackage;
   U : TUnitPackage;
   Dep : TUnitDependency;
 
   AtrLab : TRtfdAttribute;
+  OpLab  : TRtfdOperation;
+
+  arT : TessConnectionArrowStyle;
 
   Mi : IModelIterator;
   DestBox: TRtfdBox;
@@ -696,7 +727,7 @@ begin
         begin
           DestBox := GetBox( (CBox.Entity as TClass).Ancestor.FullName );
           if Assigned(DestBox) then
-            Panel.ConnectObjects(CBox,DestBox);
+            Panel.ConnectObjects(CBox,DestBox,'',csNormal,asNone,asEmptyClosed);
         end;
         //Implements
         Mi := (CBox.Entity as TClass).GetImplements;
@@ -704,7 +735,7 @@ begin
         begin
           DestBox := GetBox( Mi.Next.FullName );
           if Assigned(DestBox) then
-            Panel.ConnectObjects(CBox,DestBox,csThinDash);
+            Panel.ConnectObjects(CBox,DestBox,'',csThinDash,asNone,asEmptyOpen);
         end;
         //Attributes associations
         if ShowAssoc then
@@ -714,6 +745,7 @@ begin
           begin
             A := TAttribute(Mi.Next);
             //Avoid arrows that points to themselves, also associations to ancestor (double arrows)
+            if A.Visibility >= VisibilityFilter then
             if Assigned(A.TypeClassifier) and
               (A.TypeClassifier<>CBox.Entity) and
               (A.TypeClassifier<>(CBox.Entity as TClass).Ancestor) then
@@ -734,9 +766,50 @@ begin
                     end;
                   end;
                 end;
-                if Assigned(AtrLab) then
-                  Panel.ConnectObjectsLables(CBox,DestBox,AtrLab,nil,csThinDash,asDiamond);{ else
+                if Assigned(AtrLab) then begin
+                  if (A is TProperty) then
+                  begin
+                    if (TProperty(A).ReadAttr is TAttribute) then
+                      arT := asDiamond else
+                      arT := asEmptyOpen;
+                  end else
+                    arT := asDiamond;
+
+                  Panel.ConnectObjectsLables(CBox,DestBox,A.Name,AtrLab,nil,csThinDash,arT,asNone);
+                end;
+                { else
                   Panel.ConnectObjects(CBox,DestBox,csThinDash,asDiamond);}
+              end;
+            end;
+          end;
+          Mi := (CBox.Entity as TClass).GetOperations;
+          while Mi.HasNext do
+          begin
+            O := uModel.TOperation(Mi.Next);
+            //Avoid arrows that points to themselves, also associations to ancestor (double arrows)
+            if O.Visibility >= VisibilityFilter then
+            if Assigned(O.ReturnValue) and
+              (O.ReturnValue<>CBox.Entity) and
+              (O.ReturnValue<>(CBox.Entity as TClass).Ancestor) then
+            begin
+              DestBox := GetBox( O.ReturnValue.FullName );
+              //Test for same entity, this will filter out TDatatype that can have same name as a class
+              if Assigned(DestBox) and (DestBox.Entity=O.ReturnValue) then
+              begin
+                OpLab := nil;
+                for J := 0 to CBox.ComponentCount-1 do
+                begin
+                  if CBox.Components[j] is TRtfdOperation then
+                  begin
+                    if TRtfdOperation(CBox.Components[j]).ModelEntity = O then
+                    begin
+                      OpLab := TRtfdOperation(CBox.Components[j]);
+                      Break;
+                    end;
+                  end;
+                end;
+                if Assigned(AtrLab) then
+                  Panel.ConnectObjectsLables(CBox,DestBox,O.Name,OpLab,nil,csThinDash,asEmptyOpen,asNone);
               end;
             end;
           end;
@@ -752,7 +825,7 @@ begin
         begin
           DestBox := GetBox( (IBox.Entity as TInterface).Ancestor.FullName );
           if Assigned(DestBox) then
-            Panel.ConnectObjects(IBox,DestBox);
+            Panel.ConnectObjects(IBox,DestBox,'',csNormal,asNone,asEmptyClosed);
         end;
       end;
     end else if (BoxNames.Objects[I] is TRtfdUnitPackage) then
@@ -769,7 +842,7 @@ begin
           begin
             DestBox := GetBox( Dep.Package.FullName );
             if Assigned(DestBox) then
-              Panel.ConnectObjects(UBox,DestBox,csThinDash,asEmptyOpen);
+              Panel.ConnectObjects(UBox,DestBox,'',csThinDash,asNone,asEmptyOpen);
           end;
         end;
       end;

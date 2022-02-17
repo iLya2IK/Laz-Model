@@ -172,7 +172,7 @@ begin
       //This is because the algorithm assumes that everything points downwards, while
       //we want all arrows to point upwards (descendants pointing up to their baseclass).
       if (Con.FConnectStyle=csNormal) or
-         ((Con.FConnectStyle=csThinDash) and (Con.ArrowStyle=asEmptyClosed)) then
+         ((Con.FConnectStyle=csThinDash) and (Con.ArrowToStyle=asEmptyClosed)) then
       begin  //Reverse Inheritance-connections and interface connections
         FromNode := Nodes[ Con.FTo.Tag ];
         ToNode := Nodes[ Con.FFrom.Tag ];

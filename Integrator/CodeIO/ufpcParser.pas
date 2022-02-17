@@ -64,9 +64,11 @@ type
       procedure ParseUnit(M: TPasModule);
       procedure GetUnits(u: TFPList; AVisibility: TVisibility = viPublic; Recurse: Boolean = True);
       procedure GetClasses(c: TFPList; AVisibility: TVisibility = viPublic; Recurse: Boolean = True);
+      procedure GetTypes(c: TFPList; AVisibility: TVisibility = viPublic; Recurse: Boolean = True);
       procedure PopulateMembers(ths: TClass; mems: TFPList); overload;
       procedure PopulateMembers(intf: TInterface; mems: TFPList); overload;
       procedure PopulateClass(ths: TClass; cls: TPasMembersType);
+      procedure LinkProperties(ths: TClass);
       procedure PopulateInterface(intf: TInterface; cls: TPasClassType);
       procedure AddProcedure(op: TOperation; proc: TPasProcedure);
       procedure AddConstructor(op: TOperation; proc: TPasConstructor);
@@ -115,6 +117,7 @@ function TSimpleEngine.CreateElement(AClass: TPTreeElement;
   const ASourceFilename: String; ASourceLinenumber: Integer): TPasElement;
 begin
   Result := AClass.Create(AName, AParent);
+
   Result.Visibility := AVisibility;
   Result.SourceFilename := ASourceFilename;
   Result.SourceLinenumber := ASourceLinenumber;
@@ -178,6 +181,7 @@ begin
    intf := M.InterfaceSection;
    GetUnits(intf.UsesList);
    GetClasses(intf.Classes);
+   GetTypes(intf.Types);
 end;
 
 procedure TfpcParser.GetUnits(u: TFPList; AVisibility: TVisibility;
@@ -281,6 +285,38 @@ begin
 //  or NOT      okClassHelper,okRecordHelper,okTypeHelper
         end;
        end else
+       if TObject(c.Items[i]) is TPasRecordType then
+       begin
+         rec := TPasRecordType(c.Items[i]);
+         ths := TClass(FUnit.FindClassifier(rec.Name));
+         PopulateClass(ths, rec);
+       end;
+     end;
+  end;
+
+end;
+
+procedure TfpcParser.GetTypes(c : TFPList; AVisibility : TVisibility;
+  Recurse : Boolean);
+var
+  i: integer;
+  rec : TPasRecordType;
+  ths: TClass;
+  intf: TInterface;
+begin
+  If Assigned(c) and (c.Count > 0) then
+  begin
+     for i := 0 to c.Count- 1 do
+     begin
+       if TObject(c.Items[i]) is TPasRecordType then
+       begin
+         rec := TPasRecordType(c.Items[i]);
+         ths := FUnit.AddClass(rec.Name);
+         ths.SourceY := rec.SourceLinenumber;
+       end;
+     end;
+     for i := 0 to c.Count- 1 do
+     begin
        if TObject(c.Items[i]) is TPasRecordType then
        begin
          rec := TPasRecordType(c.Items[i]);
@@ -461,9 +497,25 @@ begin
     end;
   end;
 
-  if Assigned(cls.Members) then
+  if Assigned(cls.Members) then begin
      PopulateMembers(ths, cls.Members);
+     LinkProperties(ths);
+  end;
 
+end;
+
+procedure TfpcParser.LinkProperties(ths : TClass);
+var
+  MI : IModelIterator;
+  Pr : TAttribute;
+begin
+  MI := ths.GetAttributes;
+  while MI.HasNext do
+  begin
+    Pr := TAttribute(MI.Next);
+    if Pr is TProperty then
+      TProperty(Pr).LinkAttrs(ths);
+  end;
 end;
 
 procedure TfpcParser.PopulateInterface(intf: TInterface; cls: TPasClassType);
@@ -540,7 +592,10 @@ begin
    prop.Visibility := getVisibility(pproc.Visibility);
    If Assigned (pproc.VarType) then
      prop.TypeClassifier := getClassifier(pproc.VarType.Name);
-
+   if assigned(pproc.ReadAccessor) then
+     prop.ReadAttrExpr := pproc.ReadAccessor.GetDeclaration(false);
+   if assigned(pproc.WriteAccessor) then
+     prop.WriteAttrExpr := pproc.WriteAccessor.GetDeclaration(false);
 end;
 
 

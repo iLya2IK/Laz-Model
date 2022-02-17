@@ -129,11 +129,21 @@ type
     property TypeClassifier : TClassifier read FTypeClassifier write SetTypeClassifier;
   end;
 
+  { TProperty }
+
   TProperty = class(TAttribute)
-  { TODO : to be specified later }
+  private
+    FReadAttr, FWriteAttr : TFeature;
+    FReadAttrExpr, FWriteAttrExpr : String;
   protected
     class function GetBeforeListener: TGUID; override;
     class function GetAfterListener: TGUID; override;
+  public
+    property ReadAttr : TFeature read FReadAttr;
+    property WriteAttr : TFeature read FWriteAttr;
+    property ReadAttrExpr : String read FReadAttrExpr write FReadAttrExpr;
+    property WriteAttrExpr : String read FWriteAttrExpr write FWriteAttrExpr;
+    procedure LinkAttrs(aOwner : TClassifier);
   end;
 
   TDataType = class(TClassifier)
@@ -849,6 +859,10 @@ function TClass.AddProperty(const NewName: string): TProperty;
 begin
   Result := TProperty.Create(Self);
   Result.FName := NewName;
+  Result.FReadAttrExpr := '';
+  Result.FWriteAttrExpr := '';
+  Result.FReadAttr := nil;
+  Result.FWriteAttr := nil;
   FFeatures.Add(Result);
 end;
 
@@ -1138,6 +1152,31 @@ end;
 class function TProperty.GetAfterListener: TGUID;
 begin
   Result := IAfterPropertyListener;
+end;
+
+procedure TProperty.LinkAttrs(aOwner : TClassifier);
+
+function LinkAttr(const Expr : String) : TFeature;
+var
+  MI : IModelIterator;
+  F : TFeature;
+begin
+  MI := aOwner.GetFeatures;
+  while MI.HasNext do
+  begin
+    F := TFeature(MI.Next);
+    if (not ( F is TProperty )) and SameText(F.Name, Expr) then
+    begin
+      Result := F;
+      Exit;
+    end;
+  end;
+  Result := nil;
+end;
+
+begin
+  FReadAttr :=  LinkAttr(FReadAttrExpr);
+  FWriteAttr :=  LinkAttr(FWriteAttrExpr);
 end;
 
 class function TProperty.GetBeforeListener: TGUID;
