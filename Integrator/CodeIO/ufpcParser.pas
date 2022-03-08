@@ -45,7 +45,6 @@ type
     property IsProgram: boolean read fIsProgram write fIsProgram;
   end;
 
-
   { TfpcParser }
 
   TfpcParser = class(TCodeParser)
@@ -103,7 +102,7 @@ function DelQuot(s:String):String;
    Result:=s;
   end;
 
-  { TSimpleEngine }
+{ TSimpleEngine }
 
 constructor TSimpleEngine.Create;
 begin
@@ -163,11 +162,10 @@ begin
   end;
 end;
 
-
-
 procedure TfpcParser.ParseProject(M: TPasProgram);
 begin
   FUnit := (FModel as TLogicPackage).AddUnit(M.Name);
+  FOM.AddNestedUnit(FUnit, false);
   FUnit.Sourcefilename := Filename;
   GetUnits(M.ProgramSection.UsesList);
 end;
@@ -178,6 +176,7 @@ var
 begin
    FUnit := (FModel as TLogicPackage).AddUnit(M.Name);
    FUnit.Sourcefilename := Self.Filename;
+   FOM.AddNestedUnit(FUnit, false);
    intf := M.InterfaceSection;
    GetUnits(intf.UsesList);
    GetClasses(intf.Classes);
@@ -192,8 +191,10 @@ var
   str: TStream;
   fullName, uName: string;
   ref: TPasElement;
+  aUn : TUnitPackage;
 begin
   If Assigned(u) and (u.Count > 0) then
+  begin
      for i := 0 to u.Count- 1 do
      begin
        ref := TPasElement(u.Items[i]);
@@ -201,7 +202,9 @@ begin
           uname := DelQuot(TPasModule(ref).FileName)
         else
           uName := ref.Name;
-       if Assigned(NeedPackage) and (FOM.ModelRoot.FindUnitPackage(uName) = nil) then
+
+       aUn := FOM.ModelRoot.FindUnitPackage(uName);
+       if Assigned(NeedPackage) and not Assigned(aUn) then
        begin
          fullName := NeedPackage(uName, str{%H-}, Recurse);
          if Fullname <> '' then
@@ -212,6 +215,7 @@ begin
              prs.NeedPackage := NeedPackage;
              try
                prs.ParseFileWithDefines(FModel, FOM, FGlobalDefines);
+               aUn := FOM.ModelRoot.FindUnitPackage(uName);
              except
                on E : EParseError do
                  ShowMessage(E.Message);
@@ -221,10 +225,11 @@ begin
            end;
          end;
        end;
-       if (FOM.ModelRoot.FindUnitPackage(uName) <> nil) and Recurse then
-         FUnit.AddUnitDependency(FOM.ModelRoot.FindUnitPackage(uName),AVisibility);
-
+       if Assigned(aUn) and Recurse then
+         FUnit.AddUnitDependency(aUn,AVisibility);
+       FOM.AddNestedUnit(FUnit.Name, uName, false);
      end;
+  end;
 end;
 
 procedure TfpcParser.GetClasses(c: TFPList; AVisibility: TVisibility;
